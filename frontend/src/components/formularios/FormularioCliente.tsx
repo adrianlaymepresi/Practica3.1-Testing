@@ -5,10 +5,10 @@ import { Pencil, Plus, X } from 'lucide-react';
 import { Boton } from '@/src/components/comunes/Boton';
 import { CampoTelefonoInternacional } from '@/src/components/comunes/CampoTelefonoInternacional';
 import { InputTexto } from '@/src/components/comunes/InputTexto';
-import { obtenerFechaActualZonaHoraria } from '@/src/lib/utils/fechas';
 import {
   construirTelefonoInternacional,
   descomponerTelefonoInternacional,
+  limpiarTexto,
   normalizarCi,
   normalizarCorreo,
   normalizarNombrePersona,
@@ -16,48 +16,44 @@ import {
   PATRON_NOMBRE_PERSONA,
 } from '@/src/lib/utils/formularios';
 import {
-  ActualizarEmpleadoPayload,
-  CrearEmpleadoPayload,
-  Empleado,
-} from '@/src/types/empleados.types';
+  ActualizarClientePayload,
+  Cliente,
+  CrearClientePayload,
+} from '@/src/types/clientes.types';
 
-const FECHA_MINIMA_NACIMIENTO = '1900-01-01';
-
-interface FormularioEmpleadoProps {
-  empleadoEdicion?: Empleado | null;
-  alCrear: (datos: CrearEmpleadoPayload) => Promise<void>;
+interface FormularioClienteProps {
+  clienteEdicion?: Cliente | null;
+  alCrear: (datos: CrearClientePayload) => Promise<void>;
   alActualizar: (
-    idEmpleado: string,
-    datos: ActualizarEmpleadoPayload,
+    idCliente: string,
+    datos: ActualizarClientePayload,
   ) => Promise<void>;
   alCancelarEdicion: () => void;
 }
 
-function obtenerInicial(empleado?: Empleado | null) {
-  const telefono = descomponerTelefonoInternacional(
-    empleado?.telefono_empleado,
-  );
+function obtenerInicial(cliente?: Cliente | null) {
+  const telefono = descomponerTelefonoInternacional(cliente?.telefono_cliente);
 
   return {
-    ci_empleado: empleado?.ci_empleado ?? '',
-    nombres_completo_empleado: empleado?.nombres_completo_empleado ?? '',
-    apellidos_completo_empleado: empleado?.apellidos_completo_empleado ?? '',
-    correo_electronico_empleado: empleado?.correo_electronico_empleado ?? '',
-    fecha_nacimiento_empleado: empleado?.fecha_nacimiento_empleado ?? '',
+    ci_cliente: cliente?.ci_cliente ?? '',
+    nombres_completo_cliente: cliente?.nombres_completo_cliente ?? '',
+    apellidos_completo_cliente: cliente?.apellidos_completo_cliente ?? '',
     codigo_pais_telefono: telefono.codigoPais,
     numero_telefono_local: telefono.numeroLocal,
+    correo_electronico_cliente: cliente?.correo_electronico_cliente ?? '',
+    direccion_cliente: cliente?.direccion_cliente ?? '',
   };
 }
 
-export function FormularioEmpleado({
-  empleadoEdicion,
+export function FormularioCliente({
+  clienteEdicion,
   alCrear,
   alActualizar,
   alCancelarEdicion,
-}: FormularioEmpleadoProps) {
-  const [formulario, setFormulario] = useState(obtenerInicial(empleadoEdicion));
+}: FormularioClienteProps) {
+  const [formulario, setFormulario] = useState(obtenerInicial(clienteEdicion));
   const [enviando, setEnviando] = useState(false);
-  const estaEditando = Boolean(empleadoEdicion);
+  const estaEditando = Boolean(clienteEdicion);
 
   async function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -65,21 +61,21 @@ export function FormularioEmpleado({
 
     try {
       const datos = {
-        ci_empleado: formulario.ci_empleado,
-        nombres_completo_empleado: formulario.nombres_completo_empleado,
-        apellidos_completo_empleado: formulario.apellidos_completo_empleado,
-        correo_electronico_empleado: formulario.correo_electronico_empleado,
-        fecha_nacimiento_empleado:
-          formulario.fecha_nacimiento_empleado || undefined,
-        telefono_empleado:
+        ci_cliente: formulario.ci_cliente,
+        nombres_completo_cliente: formulario.nombres_completo_cliente,
+        apellidos_completo_cliente: formulario.apellidos_completo_cliente,
+        telefono_cliente:
           construirTelefonoInternacional(
             formulario.codigo_pais_telefono,
             formulario.numero_telefono_local,
           ) || undefined,
+        correo_electronico_cliente:
+          formulario.correo_electronico_cliente || undefined,
+        direccion_cliente: formulario.direccion_cliente || undefined,
       };
 
-      if (empleadoEdicion) {
-        await alActualizar(empleadoEdicion.id_empleado, datos);
+      if (clienteEdicion) {
+        await alActualizar(clienteEdicion.id_cliente, datos);
         alCancelarEdicion();
       } else {
         await alCrear(datos);
@@ -93,10 +89,10 @@ export function FormularioEmpleado({
   return (
     <form className="formulario formulario-grid" onSubmit={manejarEnvio}>
       <InputTexto
-        etiqueta="CI empleado"
+        etiqueta="CI cliente"
         ayuda="Obligatorio. Solo numeros enteros, entre 6 y 20 digitos."
-        name="ci_empleado"
-        value={formulario.ci_empleado}
+        name="ci_cliente"
+        value={formulario.ci_cliente}
         minLength={6}
         maxLength={20}
         inputMode="numeric"
@@ -106,24 +102,24 @@ export function FormularioEmpleado({
         onChange={(evento) =>
           setFormulario((actual) => ({
             ...actual,
-            ci_empleado: normalizarCi(evento.target.value),
+            ci_cliente: normalizarCi(evento.target.value),
           }))
         }
       />
       <InputTexto
         etiqueta="Nombres"
         ayuda="Obligatorio. Solo letras y espacios. Se convierte a mayusculas."
-        name="nombres_completo_empleado"
-        value={formulario.nombres_completo_empleado}
+        name="nombres_completo_cliente"
+        value={formulario.nombres_completo_cliente}
         minLength={3}
         maxLength={120}
         pattern={PATRON_NOMBRE_PERSONA}
-        placeholder="JUAN CARLOS"
+        placeholder="MARIA FERNANDA"
         required
         onChange={(evento) =>
           setFormulario((actual) => ({
             ...actual,
-            nombres_completo_empleado: normalizarNombrePersona(
+            nombres_completo_cliente: normalizarNombrePersona(
               evento.target.value,
             ),
           }))
@@ -132,17 +128,17 @@ export function FormularioEmpleado({
       <InputTexto
         etiqueta="Apellidos"
         ayuda="Obligatorio. Solo letras y espacios. Se convierte a mayusculas."
-        name="apellidos_completo_empleado"
-        value={formulario.apellidos_completo_empleado}
+        name="apellidos_completo_cliente"
+        value={formulario.apellidos_completo_cliente}
         minLength={3}
         maxLength={120}
         pattern={PATRON_NOMBRE_PERSONA}
-        placeholder="PEREZ ROJAS"
+        placeholder="LOPEZ VARGAS"
         required
         onChange={(evento) =>
           setFormulario((actual) => ({
             ...actual,
-            apellidos_completo_empleado: normalizarNombrePersona(
+            apellidos_completo_cliente: normalizarNombrePersona(
               evento.target.value,
             ),
           }))
@@ -150,33 +146,17 @@ export function FormularioEmpleado({
       />
       <InputTexto
         etiqueta="Correo electronico"
-        ayuda="Obligatorio. Ejemplo: empleado@empresa.com"
-        name="correo_electronico_empleado"
+        ayuda="Opcional. Ejemplo: cliente@correo.com"
+        name="correo_electronico_cliente"
         type="email"
-        value={formulario.correo_electronico_empleado}
+        value={formulario.correo_electronico_cliente}
         maxLength={120}
         pattern={PATRON_CORREO_ELECTRONICO}
-        placeholder="empleado@empresa.com"
-        required
+        placeholder="cliente@correo.com"
         onChange={(evento) =>
           setFormulario((actual) => ({
             ...actual,
-            correo_electronico_empleado: normalizarCorreo(evento.target.value),
-          }))
-        }
-      />
-      <InputTexto
-        etiqueta="Fecha de nacimiento"
-        ayuda="Opcional. Debe estar entre 1900 y la fecha actual."
-        name="fecha_nacimiento_empleado"
-        type="date"
-        value={formulario.fecha_nacimiento_empleado}
-        min={FECHA_MINIMA_NACIMIENTO}
-        max={obtenerFechaActualZonaHoraria()}
-        onChange={(evento) =>
-          setFormulario((actual) => ({
-            ...actual,
-            fecha_nacimiento_empleado: evento.target.value,
+            correo_electronico_cliente: normalizarCorreo(evento.target.value),
           }))
         }
       />
@@ -196,13 +176,29 @@ export function FormularioEmpleado({
           }))
         }
       />
+      <InputTexto
+        etiqueta="Direccion"
+        ayuda="Opcional. Maximo 200 caracteres."
+        name="direccion_cliente"
+        value={formulario.direccion_cliente}
+        maxLength={200}
+        placeholder="Av. Ejemplo #123, Zona Central"
+        multilinea
+        rows={4}
+        onChange={(evento) =>
+          setFormulario((actual) => ({
+            ...actual,
+            direccion_cliente: limpiarTexto(evento.target.value, 200),
+          }))
+        }
+      />
       <div className="formulario__acciones">
         <Boton
           type="submit"
           icono={estaEditando ? <Pencil size={18} /> : <Plus size={18} />}
           cargando={enviando}
         >
-          {estaEditando ? 'Guardar empleado' : 'Crear empleado'}
+          {estaEditando ? 'Guardar cliente' : 'Crear cliente'}
         </Boton>
         {estaEditando ? (
           <Boton

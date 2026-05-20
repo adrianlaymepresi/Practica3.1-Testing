@@ -85,6 +85,7 @@
 .admin {
   min-height: 100vh;
   position: relative;
+  overflow-x: hidden;
 }
 
 .admin__contenido {
@@ -97,6 +98,8 @@
 
 .admin__main {
   width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
   padding: var(--contenido-padding);
 }
 
@@ -261,6 +264,8 @@
 }
 
 .contenedor-pagina {
+  width: 100%;
+  min-width: 0;
   max-width: var(--contenido-maximo);
   display: grid;
   gap: 18px;
@@ -268,9 +273,11 @@
 
 .contenedor-pagina__cabecera {
   display: flex;
+  flex-wrap: wrap;
   align-items: start;
   justify-content: space-between;
   gap: 18px;
+  min-width: 0;
 }
 
 .contenedor-pagina__cabecera p {
@@ -282,11 +289,15 @@
 .contenedor-pagina__acciones {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 10px;
+  min-width: 0;
 }
 
 .panel-tabla {
+  min-width: 0;
   padding: 18px;
+  overflow: hidden;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio);
   background: rgba(255, 252, 244, 0.88);

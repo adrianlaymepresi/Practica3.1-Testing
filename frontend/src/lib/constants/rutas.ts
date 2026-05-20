@@ -79,10 +79,10 @@ export const accesoRapidoDashboard = [
   },
   {
     titulo: 'Clientes',
-    descripcion: 'Quedara alineado con pedidos y ordenes posteriores.',
+    descripcion: 'Modulo disponible para gestionar clientes y preparar las ordenes.',
     href: '/clientes',
     icono: Users,
-    estado: 'Pendiente',
+    estado: 'Disponible ahora',
   },
   {
     titulo: 'Productos',
