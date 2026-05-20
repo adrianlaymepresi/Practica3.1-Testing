@@ -1,0 +1,129 @@
+.tabla-contenedor {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tabla {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+}
+
+.tabla th,
+.tabla td {
+  padding: clamp(14px, 0.95vw, 18px) clamp(12px, 0.85vw, 16px);
+  border-bottom: 1px solid var(--color-borde);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.tabla th {
+  color: var(--color-verde-profundo);
+  background: var(--color-celeste);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.tabla td {
+  color: var(--color-texto-suave);
+}
+
+.tabla td strong {
+  color: var(--color-texto);
+}
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.estado--activo {
+  color: var(--color-verde-profundo);
+  background: var(--color-verde-suave);
+}
+
+.estado--inactivo {
+  color: var(--color-cafe);
+  background: var(--color-cafe-suave);
+}
+
+.tabla-vacia {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  border: 1px dashed var(--color-borde);
+  border-radius: var(--radio);
+  color: var(--color-texto-suave);
+  text-align: center;
+}
+
+.tabla-vacia strong {
+  color: var(--color-verde-profundo);
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+}
+
+.paginacion__numeros,
+.paginacion__grupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paginacion__boton {
+  min-width: 38px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  color: var(--color-verde-profundo);
+  background: var(--color-superficie);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.paginacion__boton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.paginacion__boton--activo {
+  color: var(--color-crema);
+  border-color: var(--color-verde-principal);
+  background: var(--color-verde-principal);
+}
+
+.paginacion__boton--texto {
+  padding: 0 12px;
+}
+
+.paginacion__puntos {
+  color: var(--color-texto-suave);
+  font-weight: 900;
+}
+
+@media (max-width: 640px) {
+  .paginacion {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .paginacion__numeros {
+    overflow-x: auto;
+  }
+}

@@ -1,0 +1,11 @@
+export const MENSAJES = {
+  OPERACION_EXITOSA: 'Operacion realizada correctamente',
+  RECURSO_NO_ENCONTRADO: 'No se encontro el recurso solicitado',
+  DATOS_DUPLICADOS: 'Ya existe un registro con esos datos',
+  ERROR_SERVIDOR: 'Ocurrio un error inesperado',
+  REGISTRO_ARCHIVADO: 'Registro archivado correctamente',
+  REGISTRO_REACTIVADO: 'Registro reactivado correctamente',
+  REGISTRO_ELIMINADO: 'Registro eliminado correctamente',
+  ROL_CREADO: 'Rol creado correctamente',
+  ROL_ACTUALIZADO: 'Rol actualizado correctamente',
+} as const;
