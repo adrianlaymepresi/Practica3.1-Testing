@@ -25,6 +25,12 @@ export class ClientesService {
     return this.clientesRepository.listarClientes(paginacion);
   }
 
+  async listarOpciones() {
+    return {
+      datos: await this.clientesRepository.listarOpcionesActivas(),
+    };
+  }
+
   obtenerPorId(idCliente: string) {
     return this.clientesRepository.obtenerPorId(idCliente);
   }

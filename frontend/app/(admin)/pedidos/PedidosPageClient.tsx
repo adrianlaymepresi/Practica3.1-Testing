@@ -6,54 +6,60 @@ import { BarraBusqueda } from '@/src/components/comunes/BarraBusqueda';
 import { Boton } from '@/src/components/comunes/Boton';
 import { MensajeError } from '@/src/components/comunes/MensajeError';
 import { SpinnerCarga } from '@/src/components/comunes/SpinnerCarga';
-import { FormularioUsuario } from '@/src/components/formularios/FormularioUsuario';
+import { FormularioPedido } from '@/src/components/formularios/FormularioPedido';
 import { ContenedorPagina } from '@/src/components/layout/ContenedorPagina';
 import { ModalConfirmacion } from '@/src/components/modales/ModalConfirmacion';
 import { ModalDetalleRegistro } from '@/src/components/modales/ModalDetalleRegistro';
 import { ModalErroresFormulario } from '@/src/components/modales/ModalErroresFormulario';
 import { ModalFormulario } from '@/src/components/modales/ModalFormulario';
 import { Paginacion } from '@/src/components/paginacion/Paginacion';
-import { TablaUsuarios } from '@/src/components/tablas/TablaUsuarios';
+import { TablaPedidos } from '@/src/components/tablas/TablaPedidos';
 import { useErroresFormulario } from '@/src/hooks/useErroresFormulario';
+import { formatearEstadoRegistro } from '@/src/lib/utils/detalle-registro';
 import {
-  formatearEstadoRegistro,
-  formatearFechaDetalle,
-} from '@/src/lib/utils/detalle-registro';
+  formatearFechaHoraZonaHoraria,
+  formatearFechaSimpleZonaHoraria,
+} from '@/src/lib/utils/fechas';
 import { obtenerMensajeError } from '@/src/lib/utils/errores';
 import { crearPaginacionVacia } from '@/src/lib/utils/paginacion';
+import {
+  formatearMontoPedido,
+  obtenerNombreClientePedido,
+  obtenerNombreEmpleadoPedido,
+} from '@/src/lib/utils/pedidos';
+import { listarClientesOpciones } from '@/src/services/clientes.service';
 import { listarEmpleadosOpciones } from '@/src/services/empleados.service';
-import { listarRolesOpciones } from '@/src/services/roles.service';
 import {
-  actualizarUsuario,
-  archivarUsuario,
-  crearUsuario,
-  eliminarUsuario,
-  listarUsuarios,
-  reactivarUsuario,
-} from '@/src/services/usuarios.service';
+  actualizarPedido,
+  archivarPedido,
+  crearPedido,
+  eliminarPedido,
+  listarPedidos,
+  reactivarPedido,
+} from '@/src/services/pedidos.service';
 import { EstadoRegistro } from '@/src/types/api.types';
+import { ClienteOpcion } from '@/src/types/clientes.types';
 import { EmpleadoOpcion } from '@/src/types/empleados.types';
-import { RolOpcion } from '@/src/types/roles.types';
 import {
-  ActualizarUsuarioPayload,
-  CrearUsuarioPayload,
-  Usuario,
-} from '@/src/types/usuarios.types';
+  ActualizarPedidoPayload,
+  CrearPedidoPayload,
+  Pedido,
+} from '@/src/types/pedidos.types';
 
 type AccionConfirmacion = 'archivar' | 'reactivar' | 'eliminar';
 
 interface ConfirmacionPendiente {
   accion: AccionConfirmacion;
-  usuario: Usuario;
+  pedido: Pedido;
 }
 
-export function UsuariosPageClient() {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [roles, setRoles] = useState<RolOpcion[]>([]);
+export function PedidosPageClient() {
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [clientes, setClientes] = useState<ClienteOpcion[]>([]);
   const [empleados, setEmpleados] = useState<EmpleadoOpcion[]>([]);
   const [paginacion, setPaginacion] = useState(crearPaginacionVacia());
-  const [usuarioEdicion, setUsuarioEdicion] = useState<Usuario | null>(null);
-  const [usuarioDetalle, setUsuarioDetalle] = useState<Usuario | null>(null);
+  const [pedidoEdicion, setPedidoEdicion] = useState<Pedido | null>(null);
+  const [pedidoDetalle, setPedidoDetalle] = useState<Pedido | null>(null);
   const [confirmacion, setConfirmacion] =
     useState<ConfirmacionPendiente | null>(null);
   const [modalFormularioAbierto, setModalFormularioAbierto] = useState(false);
@@ -61,12 +67,12 @@ export function UsuariosPageClient() {
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  const [campoBusqueda, setCampoBusqueda] = useState('nombre_usuario');
+  const [campoBusqueda, setCampoBusqueda] = useState('codigo_orden_pedido');
   const [estadoRegistro, setEstadoRegistro] =
     useState<EstadoRegistro>('activos');
   const erroresFormulario = useErroresFormulario();
 
-  async function cargarUsuarios(
+  async function cargarPedidos(
     pagina = paginacion.pagina,
     busquedaActual = busqueda,
     campoBusquedaActual = campoBusqueda,
@@ -76,20 +82,20 @@ export function UsuariosPageClient() {
     setError(null);
 
     try {
-      const respuesta = await listarUsuarios({
+      const respuesta = await listarPedidos({
         pagina,
         limite: 10,
         busqueda: busquedaActual || undefined,
         campoBusqueda: campoBusquedaActual,
         estadoRegistro: estadoActual,
       });
-      setUsuarios(respuesta.registros);
+      setPedidos(respuesta.registros);
       setPaginacion(respuesta.paginacion);
     } catch (errorDesconocido) {
       setError(
         obtenerMensajeError(
           errorDesconocido,
-          'No se pudo obtener la lista de usuarios',
+          'No se pudo obtener la lista de pedidos',
         ),
       );
     } finally {
@@ -98,44 +104,44 @@ export function UsuariosPageClient() {
   }
 
   async function cargarCatalogos() {
-    const [rolesRespuesta, empleadosRespuesta] = await Promise.all([
-      listarRolesOpciones(),
+    const [clientesRespuesta, empleadosRespuesta] = await Promise.all([
+      listarClientesOpciones(),
       listarEmpleadosOpciones(),
     ]);
 
-    setRoles(rolesRespuesta);
+    setClientes(clientesRespuesta);
     setEmpleados(empleadosRespuesta);
   }
 
-  async function manejarCrear(datos: CrearUsuarioPayload) {
+  async function manejarCrear(datos: CrearPedidoPayload) {
     try {
-      await crearUsuario(datos);
+      await crearPedido(datos);
       erroresFormulario.limpiar();
       setModalFormularioAbierto(false);
-      await cargarUsuarios(1);
+      await cargarPedidos(1);
     } catch (errorDesconocido) {
       erroresFormulario.mostrar(
         errorDesconocido,
-        'No se pudo crear el usuario',
+        'No se pudo crear el pedido',
       );
       throw errorDesconocido;
     }
   }
 
   async function manejarActualizar(
-    idUsuario: string,
-    datos: ActualizarUsuarioPayload,
+    idPedido: string,
+    datos: ActualizarPedidoPayload,
   ) {
     try {
-      await actualizarUsuario(idUsuario, datos);
+      await actualizarPedido(idPedido, datos);
       erroresFormulario.limpiar();
-      setUsuarioEdicion(null);
+      setPedidoEdicion(null);
       setModalFormularioAbierto(false);
-      await cargarUsuarios(paginacion.pagina);
+      await cargarPedidos(paginacion.pagina);
     } catch (errorDesconocido) {
       erroresFormulario.mostrar(
         errorDesconocido,
-        'No se pudo actualizar el usuario',
+        'No se pudo actualizar el pedido',
       );
       throw errorDesconocido;
     }
@@ -150,19 +156,19 @@ export function UsuariosPageClient() {
 
     try {
       if (confirmacion.accion === 'archivar') {
-        await archivarUsuario(confirmacion.usuario.id_usuario);
+        await archivarPedido(confirmacion.pedido.id_orden_pedido);
       }
 
       if (confirmacion.accion === 'reactivar') {
-        await reactivarUsuario(confirmacion.usuario.id_usuario);
+        await reactivarPedido(confirmacion.pedido.id_orden_pedido);
       }
 
       if (confirmacion.accion === 'eliminar') {
-        await eliminarUsuario(confirmacion.usuario.id_usuario);
+        await eliminarPedido(confirmacion.pedido.id_orden_pedido);
       }
 
       setConfirmacion(null);
-      await cargarUsuarios(paginacion.pagina);
+      await cargarPedidos(paginacion.pagina);
     } catch (errorDesconocido) {
       setError(
         obtenerMensajeError(errorDesconocido, 'No se pudo completar la accion'),
@@ -177,22 +183,22 @@ export function UsuariosPageClient() {
 
     async function cargarInicial() {
       try {
-        const [usuariosRespuesta, rolesRespuesta, empleadosRespuesta] =
+        const [pedidosRespuesta, clientesRespuesta, empleadosRespuesta] =
           await Promise.all([
-            listarUsuarios({
+            listarPedidos({
               pagina: 1,
               limite: 10,
-              campoBusqueda: 'nombre_usuario',
+              campoBusqueda: 'codigo_orden_pedido',
               estadoRegistro: 'activos',
             }),
-            listarRolesOpciones(),
+            listarClientesOpciones(),
             listarEmpleadosOpciones(),
           ]);
 
         if (estaMontado) {
-          setUsuarios(usuariosRespuesta.registros);
-          setPaginacion(usuariosRespuesta.paginacion);
-          setRoles(rolesRespuesta);
+          setPedidos(pedidosRespuesta.registros);
+          setPaginacion(pedidosRespuesta.paginacion);
+          setClientes(clientesRespuesta);
           setEmpleados(empleadosRespuesta);
           setError(null);
         }
@@ -201,7 +207,7 @@ export function UsuariosPageClient() {
           setError(
             obtenerMensajeError(
               errorDesconocido,
-              'No se pudo obtener la lista de usuarios',
+              'No se pudo obtener la lista de pedidos',
             ),
           );
         }
@@ -221,27 +227,27 @@ export function UsuariosPageClient() {
 
   return (
     <ContenedorPagina
-      titulo="Usuarios"
-      descripcion="Gestiona los accesos internos del panel asignando un empleado y un rol activo."
+      titulo="Pedidos"
+      descripcion="Gestiona la cabecera del pedido y luego entra a cada registro para trabajar sus detalles."
       acciones={
         <>
           <Boton
             icono={<Plus size={17} />}
             onClick={() => {
               erroresFormulario.limpiar();
-              setUsuarioEdicion(null);
+              setPedidoEdicion(null);
               setModalFormularioAbierto(true);
             }}
             type="button"
           >
-            Nuevo usuario
+            Nuevo pedido
           </Boton>
           <Boton
             variante="secundario"
             icono={<RefreshCcw size={17} />}
             onClick={async () => {
               await cargarCatalogos();
-              await cargarUsuarios(paginacion.pagina);
+              await cargarPedidos(paginacion.pagina);
             }}
             type="button"
           >
@@ -252,57 +258,66 @@ export function UsuariosPageClient() {
     >
       <BarraBusqueda
         opciones={[
-          { valor: 'nombre_usuario', etiqueta: 'Usuario' },
+          { valor: 'codigo_orden_pedido', etiqueta: 'Codigo' },
+          { valor: 'cliente', etiqueta: 'Cliente' },
+          { valor: 'ci_cliente', etiqueta: 'CI cliente' },
           { valor: 'empleado', etiqueta: 'Empleado' },
           { valor: 'ci_empleado', etiqueta: 'CI empleado' },
-          { valor: 'nombre_rol', etiqueta: 'Rol' },
+          { valor: 'estado_orden_pedido', etiqueta: 'Estado pedido' },
         ]}
-        campoInicial="nombre_usuario"
+        campoInicial="codigo_orden_pedido"
         estadoInicial="activos"
         mostrarFiltroEstado
-        placeholder="Buscar usuario"
+        placeholder="Buscar pedido"
         alBuscar={(valor, campo, estado) => {
           const estadoActual = estado ?? 'activos';
           setBusqueda(valor);
           setCampoBusqueda(campo);
           setEstadoRegistro(estadoActual);
-          void cargarUsuarios(1, valor, campo, estadoActual);
+          void cargarPedidos(1, valor, campo, estadoActual);
         }}
         alLimpiar={() => {
           setBusqueda('');
-          setCampoBusqueda('nombre_usuario');
+          setCampoBusqueda('codigo_orden_pedido');
           setEstadoRegistro('activos');
-          void cargarUsuarios(1, '', 'nombre_usuario', 'activos');
+          void cargarPedidos(1, '', 'codigo_orden_pedido', 'activos');
         }}
       />
       <section className="panel-tabla">
         {error ? <MensajeError mensaje={error} /> : null}
         {cargando ? (
-          <SpinnerCarga texto="Cargando usuarios" />
+          <SpinnerCarga texto="Cargando pedidos" />
         ) : (
           <>
-            <TablaUsuarios
-              usuarios={usuarios}
-              alVerDetalle={setUsuarioDetalle}
-              alEditar={(usuario) => {
+            <TablaPedidos
+              pedidos={pedidos}
+              alVerDetalle={setPedidoDetalle}
+              alEditar={(pedido) => {
                 erroresFormulario.limpiar();
-                setUsuarioEdicion(usuario);
+                setPedidoEdicion(pedido);
                 setModalFormularioAbierto(true);
               }}
-              alCambiarEstado={(usuario) =>
+              alCambiarEstado={(pedido) =>
                 setConfirmacion({
-                  accion: usuario.es_activo_usuario ? 'archivar' : 'reactivar',
-                  usuario,
+                  accion: pedido.es_activo_orden_pedido
+                    ? 'archivar'
+                    : 'reactivar',
+                  pedido,
                 })
               }
-              alEliminar={(usuario) =>
-                setConfirmacion({ accion: 'eliminar', usuario })
+              alEliminar={(pedido) =>
+                setConfirmacion({ accion: 'eliminar', pedido })
               }
             />
             <Paginacion
               paginacion={paginacion}
               alCambiarPagina={(pagina) =>
-                void cargarUsuarios(pagina, busqueda, campoBusqueda, estadoRegistro)
+                void cargarPedidos(
+                  pagina,
+                  busqueda,
+                  campoBusqueda,
+                  estadoRegistro,
+                )
               }
             />
           </>
@@ -310,24 +325,24 @@ export function UsuariosPageClient() {
       </section>
       <ModalFormulario
         abierto={modalFormularioAbierto}
-        titulo={usuarioEdicion ? 'Editar usuario' : 'Nuevo usuario'}
-        descripcion="Asigna un empleado activo, un rol y, si corresponde, actualiza la contrasenia."
+        titulo={pedidoEdicion ? 'Editar pedido' : 'Nuevo pedido'}
+        descripcion="Registra la cabecera del pedido. Los productos se agregan despues desde la gestion de detalles."
         alCerrar={() => {
           erroresFormulario.limpiar();
-          setUsuarioEdicion(null);
+          setPedidoEdicion(null);
           setModalFormularioAbierto(false);
         }}
       >
-        <FormularioUsuario
-          key={usuarioEdicion?.id_usuario ?? 'nuevo'}
-          usuarioEdicion={usuarioEdicion}
+        <FormularioPedido
+          key={pedidoEdicion?.id_orden_pedido ?? 'nuevo'}
+          pedidoEdicion={pedidoEdicion}
+          clientes={clientes}
           empleados={empleados}
-          roles={roles}
           alCrear={manejarCrear}
           alActualizar={manejarActualizar}
           alCancelarEdicion={() => {
             erroresFormulario.limpiar();
-            setUsuarioEdicion(null);
+            setPedidoEdicion(null);
             setModalFormularioAbierto(false);
           }}
         />
@@ -339,42 +354,68 @@ export function UsuariosPageClient() {
         alCerrar={erroresFormulario.limpiar}
       />
       <ModalDetalleRegistro
-        abierto={Boolean(usuarioDetalle)}
+        abierto={Boolean(pedidoDetalle)}
         titulo={
-          usuarioDetalle
-            ? `Usuario ${usuarioDetalle.nombre_usuario}`
-            : 'Detalle usuario'
+          pedidoDetalle
+            ? `Pedido ${pedidoDetalle.codigo_orden_pedido}`
+            : 'Detalle pedido'
         }
         secciones={
-          usuarioDetalle
+          pedidoDetalle
             ? [
                 {
                   titulo: 'Datos principales',
                   items: [
                     {
-                      etiqueta: 'Usuario',
-                      valor: usuarioDetalle.nombre_usuario,
+                      etiqueta: 'Codigo',
+                      valor: pedidoDetalle.codigo_orden_pedido,
+                    },
+                    {
+                      etiqueta: 'Cliente',
+                      valor: obtenerNombreClientePedido(pedidoDetalle.cliente),
                     },
                     {
                       etiqueta: 'Empleado',
-                      valor: usuarioDetalle.empleado
-                        ? `${usuarioDetalle.empleado.ci_empleado} - ${usuarioDetalle.empleado.nombres_completo_empleado} ${usuarioDetalle.empleado.apellidos_completo_empleado}`
-                        : 'Sin empleado',
+                      valor: obtenerNombreEmpleadoPedido(pedidoDetalle.empleado),
                     },
                     {
-                      etiqueta: 'Rol',
-                      valor: usuarioDetalle.rol?.nombre_rol ?? 'Sin rol',
-                    },
-                    {
-                      etiqueta: 'Ultima sesion',
-                      valor: formatearFechaDetalle(
-                        usuarioDetalle.ultima_sesion_usuario,
+                      etiqueta: 'Fecha',
+                      valor: formatearFechaHoraZonaHoraria(
+                        pedidoDetalle.fecha_orden_pedido,
                       ),
                     },
                     {
-                      etiqueta: 'Estado',
+                      etiqueta: 'Estado del pedido',
+                      valor: pedidoDetalle.estado_orden_pedido,
+                    },
+                    {
+                      etiqueta: 'Observacion',
+                      valor:
+                        pedidoDetalle.observacion_orden_pedido ??
+                        'Sin observacion',
+                    },
+                    {
+                      etiqueta: 'Descuento',
+                      valor: formatearMontoPedido(
+                        pedidoDetalle.descuento_orden_pedido,
+                      ),
+                    },
+                    {
+                      etiqueta: 'Subtotal',
+                      valor: formatearMontoPedido(
+                        pedidoDetalle.subtotal_orden_pedido,
+                      ),
+                    },
+                    {
+                      etiqueta: 'Total',
+                      valor: formatearMontoPedido(
+                        pedidoDetalle.total_orden_pedido,
+                      ),
+                    },
+                    {
+                      etiqueta: 'Estado actual',
                       valor: formatearEstadoRegistro(
-                        usuarioDetalle.es_activo_usuario,
+                        pedidoDetalle.es_activo_orden_pedido,
                       ),
                     },
                   ],
@@ -382,23 +423,23 @@ export function UsuariosPageClient() {
               ]
             : []
         }
-        alCerrar={() => setUsuarioDetalle(null)}
+        alCerrar={() => setPedidoDetalle(null)}
       />
       <ModalConfirmacion
         abierto={Boolean(confirmacion)}
         titulo={
           confirmacion?.accion === 'archivar'
-            ? 'Archivar usuario'
+            ? 'Archivar pedido'
             : confirmacion?.accion === 'reactivar'
-              ? 'Reactivar usuario'
-              : 'Eliminar usuario'
+              ? 'Reactivar pedido'
+              : 'Eliminar pedido'
         }
         mensaje={
           confirmacion?.accion === 'archivar'
-            ? 'Seguro que deseas archivar este usuario? Dejara de aparecer en la vista activa.'
+            ? 'Seguro que deseas archivar este pedido? Se conservara la cabecera y sus detalles, pero dejara de aparecer en la vista activa.'
             : confirmacion?.accion === 'reactivar'
-              ? 'Seguro que deseas reactivar este usuario? Volvera a estar disponible en el panel.'
-              : 'Seguro que deseas eliminar este usuario de forma permanente? Esta accion no se puede deshacer.'
+              ? 'Seguro que deseas reactivar este pedido? Volvera a estar disponible para seguir gestionando su detalle.'
+              : 'Seguro que deseas eliminar este pedido de forma permanente? La operacion se bloqueara si el pedido aun tiene detalles registrados.'
         }
         textoConfirmar={
           confirmacion?.accion === 'archivar'

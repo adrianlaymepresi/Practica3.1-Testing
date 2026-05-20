@@ -7,6 +7,7 @@ import {
   ActualizarProductoPayload,
   CrearProductoPayload,
   Producto,
+  ProductoOpcion,
 } from '@/src/types/productos.types';
 
 function construirFormDataProducto(
@@ -38,6 +39,10 @@ export function listarProductos(parametros: ParametrosPaginacion) {
   return solicitarApi<RespuestaPaginada<Producto>>('/productos', {
     parametros,
   });
+}
+
+export function listarProductosOpciones() {
+  return solicitarApi<ProductoOpcion[]>('/productos/opciones');
 }
 
 export function crearProducto(datos: CrearProductoPayload) {

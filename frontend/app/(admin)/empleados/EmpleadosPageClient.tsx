@@ -17,7 +17,6 @@ import { TablaEmpleados } from '@/src/components/tablas/TablaEmpleados';
 import { useErroresFormulario } from '@/src/hooks/useErroresFormulario';
 import {
   formatearEstadoRegistro,
-  formatearFechaDetalle,
   formatearFechaSimpleDetalle,
 } from '@/src/lib/utils/detalle-registro';
 import { obtenerMensajeError } from '@/src/lib/utils/errores';
@@ -329,7 +328,6 @@ export function EmpleadosPageClient() {
                 {
                   titulo: 'Datos principales',
                   items: [
-                    { etiqueta: 'UUID', valor: empleadoDetalle.id_empleado },
                     { etiqueta: 'CI', valor: empleadoDetalle.ci_empleado },
                     {
                       etiqueta: 'Nombres',
@@ -353,29 +351,10 @@ export function EmpleadosPageClient() {
                         empleadoDetalle.fecha_nacimiento_empleado,
                       ),
                     },
-                  ],
-                },
-                {
-                  titulo: 'Estado y auditoria',
-                  items: [
                     {
                       etiqueta: 'Estado',
                       valor: formatearEstadoRegistro(
                         empleadoDetalle.es_activo_empleado,
-                      ),
-                    },
-                    {
-                      etiqueta: 'Creado',
-                      valor: formatearFechaDetalle(empleadoDetalle.created_at),
-                    },
-                    {
-                      etiqueta: 'Actualizado',
-                      valor: formatearFechaDetalle(empleadoDetalle.updated_at),
-                    },
-                    {
-                      etiqueta: 'Archivado',
-                      valor: formatearFechaSimpleDetalle(
-                        empleadoDetalle.deleted_at,
                       ),
                     },
                   ],

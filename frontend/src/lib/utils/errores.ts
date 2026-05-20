@@ -28,6 +28,18 @@ const ETIQUETAS_CAMPOS: Record<string, string> = {
   precio_producto: 'Precio del producto',
   stock_producto: 'Stock del producto',
   archivo: 'Imagen del producto',
+  id_orden_pedido: 'Pedido',
+  codigo_orden_pedido: 'Codigo del pedido',
+  fecha_orden_pedido: 'Fecha del pedido',
+  estado_orden_pedido: 'Estado del pedido',
+  observacion_orden_pedido: 'Observacion del pedido',
+  subtotal_orden_pedido: 'Subtotal del pedido',
+  descuento_orden_pedido: 'Descuento del pedido',
+  total_orden_pedido: 'Total del pedido',
+  id_detalle_orden: 'Detalle del pedido',
+  cantidad_detalle_orden: 'Cantidad',
+  precio_unitario_detalle_orden: 'Precio unitario',
+  subtotal_detalle_orden: 'Subtotal del detalle',
 };
 
 function esErrorCampo(valor: unknown): valor is ErrorCampo {

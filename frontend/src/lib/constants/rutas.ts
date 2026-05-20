@@ -93,9 +93,9 @@ export const accesoRapidoDashboard = [
   },
   {
     titulo: 'Pedidos',
-    descripcion: 'Gestionara ordenpedido y detalleorden con calculos en backend.',
+    descripcion: 'Modulo disponible para pedidos, detalle, calculos y control de stock.',
     href: '/pedidos',
     icono: BriefcaseBusiness,
-    estado: 'Pendiente',
+    estado: 'Disponible ahora',
   },
 ] as const;

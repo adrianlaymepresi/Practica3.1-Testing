@@ -16,6 +16,15 @@ export interface Producto {
   deleted_at: string | null;
 }
 
+export interface ProductoOpcion {
+  id_producto: string;
+  codigo_producto: string;
+  nombre_producto: string;
+  precio_producto: number;
+  stock_producto: number;
+  url_imagen_producto: string | null;
+}
+
 export interface CrearProductoPayload {
   codigo_producto: string;
   nombre_producto: string;

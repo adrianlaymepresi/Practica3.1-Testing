@@ -15,11 +15,7 @@ import { ModalFormulario } from '@/src/components/modales/ModalFormulario';
 import { Paginacion } from '@/src/components/paginacion/Paginacion';
 import { TablaRoles } from '@/src/components/tablas/TablaRoles';
 import { useErroresFormulario } from '@/src/hooks/useErroresFormulario';
-import {
-  formatearEstadoRegistro,
-  formatearFechaDetalle,
-  formatearFechaSimpleDetalle,
-} from '@/src/lib/utils/detalle-registro';
+import { formatearEstadoRegistro } from '@/src/lib/utils/detalle-registro';
 import { obtenerMensajeError } from '@/src/lib/utils/errores';
 import { crearPaginacionVacia } from '@/src/lib/utils/paginacion';
 import {
@@ -310,32 +306,14 @@ export function RolesPageClient() {
                 {
                   titulo: 'Datos principales',
                   items: [
-                    { etiqueta: 'UUID', valor: rolDetalle.id_rol },
                     { etiqueta: 'Nombre', valor: rolDetalle.nombre_rol },
                     {
                       etiqueta: 'Descripcion',
                       valor: rolDetalle.descripcion_rol ?? 'Sin descripcion',
                     },
-                  ],
-                },
-                {
-                  titulo: 'Estado y auditoria',
-                  items: [
                     {
                       etiqueta: 'Estado',
                       valor: formatearEstadoRegistro(rolDetalle.es_activo_rol),
-                    },
-                    {
-                      etiqueta: 'Creado',
-                      valor: formatearFechaDetalle(rolDetalle.created_at),
-                    },
-                    {
-                      etiqueta: 'Actualizado',
-                      valor: formatearFechaDetalle(rolDetalle.updated_at),
-                    },
-                    {
-                      etiqueta: 'Archivado',
-                      valor: formatearFechaSimpleDetalle(rolDetalle.deleted_at),
                     },
                   ],
                 },

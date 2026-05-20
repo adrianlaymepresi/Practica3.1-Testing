@@ -34,6 +34,12 @@ export class ProductosService {
     return this.productosRepository.listarProductos(paginacion);
   }
 
+  async listarOpciones() {
+    return {
+      datos: await this.productosRepository.listarOpcionesActivas(),
+    };
+  }
+
   obtenerPorId(idProducto: string) {
     return this.productosRepository.obtenerPorId(idProducto);
   }

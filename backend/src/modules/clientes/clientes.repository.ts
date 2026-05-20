@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '../../common/database/base.repository';
 import { SupabaseService } from '../../common/database/supabase.service';
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
+import { ApiException } from '../../common/exceptions/api.exception';
 import {
   ActualizarCliente,
   Cliente,
@@ -48,5 +49,21 @@ export class ClientesRepository extends BaseRepository<
       ciCliente,
       idActual ? { campo: 'id_cliente', valor: idActual } : undefined,
     );
+  }
+
+  async listarOpcionesActivas() {
+    const { data, error } = await this.tabla()
+      .select(
+        'id_cliente, ci_cliente, nombres_completo_cliente, apellidos_completo_cliente, telefono_cliente, correo_electronico_cliente, direccion_cliente',
+      )
+      .eq('es_activo_cliente', true)
+      .is('deleted_at', null)
+      .order('nombres_completo_cliente', { ascending: true });
+
+    if (error) {
+      throw ApiException.desdeSupabase(error);
+    }
+
+    return data ?? [];
   }
 }

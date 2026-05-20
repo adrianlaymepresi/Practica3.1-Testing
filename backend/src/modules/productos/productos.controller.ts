@@ -26,6 +26,11 @@ export class ProductosController {
     return this.productosService.listar(paginacion);
   }
 
+  @Get('opciones')
+  listarOpciones() {
+    return this.productosService.listarOpciones();
+  }
+
   @Get(':id')
   obtenerPorId(@Param('id') idProducto: string) {
     return this.productosService.obtenerPorId(idProducto);

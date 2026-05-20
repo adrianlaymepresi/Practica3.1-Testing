@@ -6,6 +6,7 @@ import {
 import {
   ActualizarClientePayload,
   Cliente,
+  ClienteOpcion,
   CrearClientePayload,
 } from '@/src/types/clientes.types';
 
@@ -13,6 +14,10 @@ export function listarClientes(parametros: ParametrosPaginacion) {
   return solicitarApi<RespuestaPaginada<Cliente>>('/clientes', {
     parametros,
   });
+}
+
+export function listarClientesOpciones() {
+  return solicitarApi<ClienteOpcion[]>('/clientes/opciones');
 }
 
 export function crearCliente(datos: CrearClientePayload) {

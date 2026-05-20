@@ -17,8 +17,6 @@ import { TablaClientes } from '@/src/components/tablas/TablaClientes';
 import { useErroresFormulario } from '@/src/hooks/useErroresFormulario';
 import {
   formatearEstadoRegistro,
-  formatearFechaDetalle,
-  formatearFechaSimpleDetalle,
 } from '@/src/lib/utils/detalle-registro';
 import { obtenerMensajeError } from '@/src/lib/utils/errores';
 import { crearPaginacionVacia } from '@/src/lib/utils/paginacion';
@@ -331,7 +329,6 @@ export function ClientesPageClient() {
                 {
                   titulo: 'Datos principales',
                   items: [
-                    { etiqueta: 'UUID', valor: clienteDetalle.id_cliente },
                     { etiqueta: 'CI', valor: clienteDetalle.ci_cliente },
                     {
                       etiqueta: 'Nombres',
@@ -354,29 +351,10 @@ export function ClientesPageClient() {
                       etiqueta: 'Direccion',
                       valor: clienteDetalle.direccion_cliente ?? 'Sin direccion',
                     },
-                  ],
-                },
-                {
-                  titulo: 'Estado y auditoria',
-                  items: [
                     {
                       etiqueta: 'Estado',
                       valor: formatearEstadoRegistro(
                         clienteDetalle.es_activo_cliente,
-                      ),
-                    },
-                    {
-                      etiqueta: 'Creado',
-                      valor: formatearFechaDetalle(clienteDetalle.created_at),
-                    },
-                    {
-                      etiqueta: 'Actualizado',
-                      valor: formatearFechaDetalle(clienteDetalle.updated_at),
-                    },
-                    {
-                      etiqueta: 'Archivado',
-                      valor: formatearFechaSimpleDetalle(
-                        clienteDetalle.deleted_at,
                       ),
                     },
                   ],

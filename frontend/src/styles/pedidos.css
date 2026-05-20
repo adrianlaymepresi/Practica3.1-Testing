@@ -1,0 +1,101 @@
+.enlace-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.tabla--pedidos {
+  min-width: 1760px;
+}
+
+.tabla--detalles-pedido {
+  min-width: 980px;
+}
+
+.pedido-estado-negocio {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+  color: var(--color-verde-profundo);
+  background: rgba(232, 246, 251, 0.72);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.resumen-pedido {
+  display: grid;
+  gap: 16px;
+}
+
+.resumen-pedido__grid,
+.pedido-resumen-formulario {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.resumen-pedido__tarjeta,
+.pedido-resumen-formulario__tarjeta {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: rgba(255, 252, 244, 0.86);
+  box-shadow: 0 12px 26px var(--color-sombra);
+}
+
+.resumen-pedido__tarjeta span,
+.pedido-resumen-formulario__tarjeta span {
+  color: var(--color-cafe);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.resumen-pedido__tarjeta strong,
+.pedido-resumen-formulario__tarjeta strong {
+  color: var(--color-verde-profundo);
+  line-height: 1.5;
+}
+
+.resumen-pedido__observacion {
+  padding: 16px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: rgba(245, 251, 253, 0.8);
+}
+
+.resumen-pedido__observacion strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-verde-profundo);
+}
+
+.resumen-pedido__observacion p {
+  margin: 0;
+  color: var(--color-texto-suave);
+  line-height: 1.7;
+}
+
+@media (max-width: 1080px) {
+  .resumen-pedido__grid,
+  .pedido-resumen-formulario {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .resumen-pedido__grid,
+  .pedido-resumen-formulario {
+    grid-template-columns: 1fr;
+  }
+
+  .enlace-boton {
+    width: 100%;
+  }
+}

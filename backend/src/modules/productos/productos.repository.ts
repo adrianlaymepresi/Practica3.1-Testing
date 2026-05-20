@@ -66,4 +66,20 @@ export class ProductosRepository extends BaseRepository<
 
     return data;
   }
+
+  async listarOpcionesActivas() {
+    const { data, error } = await this.tabla()
+      .select(
+        'id_producto, codigo_producto, nombre_producto, precio_producto, stock_producto, url_imagen_producto',
+      )
+      .eq('es_activo_producto', true)
+      .is('deleted_at', null)
+      .order('nombre_producto', { ascending: true });
+
+    if (error) {
+      throw ApiException.desdeSupabase(error);
+    }
+
+    return data ?? [];
+  }
 }

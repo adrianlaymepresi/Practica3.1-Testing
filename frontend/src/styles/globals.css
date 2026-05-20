@@ -5,6 +5,7 @@
 @import './tablas.css';
 @import './modales.css';
 @import './productos.css';
+@import './pedidos.css';
 
 * {
   box-sizing: border-box;

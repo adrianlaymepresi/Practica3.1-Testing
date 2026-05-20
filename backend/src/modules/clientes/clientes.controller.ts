@@ -22,6 +22,11 @@ export class ClientesController {
     return this.clientesService.listar(paginacion);
   }
 
+  @Get('opciones')
+  listarOpciones() {
+    return this.clientesService.listarOpciones();
+  }
+
   @Get(':id')
   obtenerPorId(@Param('id') idCliente: string) {
     return this.clientesService.obtenerPorId(idCliente);

@@ -12,6 +12,16 @@ export interface Cliente {
   deleted_at: string | null;
 }
 
+export interface ClienteOpcion {
+  id_cliente: string;
+  ci_cliente: string;
+  nombres_completo_cliente: string;
+  apellidos_completo_cliente: string;
+  telefono_cliente: string | null;
+  correo_electronico_cliente: string | null;
+  direccion_cliente: string | null;
+}
+
 export interface CrearClientePayload {
   ci_cliente: string;
   nombres_completo_cliente: string;
