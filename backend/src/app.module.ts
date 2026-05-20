@@ -7,6 +7,7 @@ import { validarEntorno } from './common/config/esquema.entorno';
 import { SupabaseModule } from './common/database/supabase.module';
 import { ClientesModule } from './modules/clientes/clientes.module';
 import { EmpleadosModule } from './modules/empleados/empleados.module';
+import { ProductosModule } from './modules/productos/productos.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
 
@@ -23,6 +24,7 @@ import { UsuariosModule } from './modules/usuarios/usuarios.module';
     EmpleadosModule,
     UsuariosModule,
     ClientesModule,
+    ProductosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

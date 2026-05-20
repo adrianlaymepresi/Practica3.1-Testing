@@ -86,10 +86,10 @@ export const accesoRapidoDashboard = [
   },
   {
     titulo: 'Productos',
-    descripcion: 'Se mostraran como cards con soporte de imagen.',
+    descripcion: 'Modulo disponible con cards, imagen y soporte de Storage.',
     href: '/productos',
     icono: Package,
-    estado: 'Pendiente',
+    estado: 'Disponible ahora',
   },
   {
     titulo: 'Pedidos',

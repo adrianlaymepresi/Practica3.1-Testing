@@ -40,6 +40,19 @@ export function normalizarContrasenia(valor: string, maximo = 72) {
   return valor.replace(/\s/g, '').slice(0, maximo);
 }
 
+export function normalizarEntero(valor: string, maximo = 10) {
+  return valor.replace(/[^0-9]/g, '').slice(0, maximo);
+}
+
+export function normalizarDecimalNoNegativo(valor: string, maximo = 13) {
+  const conPunto = valor.replace(',', '.').replace(/[^0-9.]/g, '');
+  const partes = conPunto.split('.');
+  const entero = partes[0].slice(0, maximo);
+  const decimal = partes.slice(1).join('').slice(0, 2);
+
+  return partes.length > 1 ? `${entero}.${decimal}` : entero;
+}
+
 export function normalizarNumeroTelefonoLocal(valor: string, maximo = 15) {
   return valor.replace(/[^0-9]/g, '').slice(0, maximo);
 }

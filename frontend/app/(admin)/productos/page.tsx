@@ -1,10 +1,5 @@
-import { PanelEnConstruccion } from '@/src/components/layout/PanelEnConstruccion';
+import { ProductosPageClient } from './ProductosPageClient';
 
 export default function ProductosPage() {
-  return (
-    <PanelEnConstruccion
-      titulo="Productos"
-      descripcion="Este modulo se mostrara con cards y soporte para imagen en Storage."
-    />
-  );
+  return <ProductosPageClient />;
 }

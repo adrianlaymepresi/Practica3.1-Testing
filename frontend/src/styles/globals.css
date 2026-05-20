@@ -4,6 +4,7 @@
 @import './formularios.css';
 @import './tablas.css';
 @import './modales.css';
+@import './productos.css';
 
 * {
   box-sizing: border-box;

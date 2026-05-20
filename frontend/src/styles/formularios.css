@@ -64,6 +64,10 @@
   grid-template-columns: 1fr;
 }
 
+.formulario__campo-completo {
+  grid-column: 1 / -1;
+}
+
 .formulario__acciones {
   display: flex;
   flex-wrap: wrap;

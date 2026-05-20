@@ -14,4 +14,6 @@ export const MENSAJES = {
   USUARIO_ACTUALIZADO: 'Usuario actualizado correctamente',
   CLIENTE_CREADO: 'Cliente creado correctamente',
   CLIENTE_ACTUALIZADO: 'Cliente actualizado correctamente',
+  PRODUCTO_CREADO: 'Producto creado correctamente',
+  PRODUCTO_ACTUALIZADO: 'Producto actualizado correctamente',
 } as const;

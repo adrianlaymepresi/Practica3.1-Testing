@@ -21,6 +21,13 @@ const ETIQUETAS_CAMPOS: Record<string, string> = {
   telefono_cliente: 'Telefono del cliente',
   correo_electronico_cliente: 'Correo del cliente',
   direccion_cliente: 'Direccion del cliente',
+  id_producto: 'Producto',
+  codigo_producto: 'Codigo del producto',
+  nombre_producto: 'Nombre del producto',
+  descripcion_producto: 'Descripcion del producto',
+  precio_producto: 'Precio del producto',
+  stock_producto: 'Stock del producto',
+  archivo: 'Imagen del producto',
 };
 
 function esErrorCampo(valor: unknown): valor is ErrorCampo {
