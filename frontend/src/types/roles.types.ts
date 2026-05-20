@@ -8,6 +8,12 @@ export interface Rol {
   deleted_at: string | null;
 }
 
+export interface RolOpcion {
+  id_rol: string;
+  nombre_rol: string;
+  descripcion_rol: string | null;
+}
+
 export interface CrearRolPayload {
   nombre_rol: string;
   descripcion_rol?: string;

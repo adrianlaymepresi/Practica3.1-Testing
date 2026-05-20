@@ -13,6 +13,11 @@ export class RolesController {
     return this.rolesService.listar(paginacion);
   }
 
+  @Get('opciones')
+  listarOpciones() {
+    return this.rolesService.listarOpciones();
+  }
+
   @Get(':id')
   obtenerPorId(@Param('id') idRol: string) {
     return this.rolesService.obtenerPorId(idRol);

@@ -47,4 +47,18 @@ export class RolesRepository extends BaseRepository<
 
     return data;
   }
+
+  async listarOpcionesActivas() {
+    const { data, error } = await this.tabla()
+      .select('id_rol, nombre_rol, descripcion_rol')
+      .eq('es_activo_rol', true)
+      .is('deleted_at', null)
+      .order('nombre_rol', { ascending: true });
+
+    if (error) {
+      throw ApiException.desdeSupabase(error);
+    }
+
+    return data ?? [];
+  }
 }

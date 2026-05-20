@@ -55,3 +55,18 @@ export function formatearFechaCabecera() {
     timeZone: ZONA_HORARIA_APLICACION,
   }).format(new Date());
 }
+
+export function obtenerFechaActualZonaHoraria() {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA_HORARIA_APLICACION,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+
+  const anio = partes.find((parte) => parte.type === 'year')?.value ?? '2000';
+  const mes = partes.find((parte) => parte.type === 'month')?.value ?? '01';
+  const dia = partes.find((parte) => parte.type === 'day')?.value ?? '01';
+
+  return `${anio}-${mes}-${dia}`;
+}

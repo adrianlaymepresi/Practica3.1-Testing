@@ -2,7 +2,6 @@ type EntornoEntrada = Record<string, string | undefined>;
 
 const variablesObligatorias = [
   'JWT_ACCESS_SECRET',
-  'JWT_REFRESH_SECRET',
   'SUPABASE_URL',
   'SUPABASE_SECRET_KEY',
   'SUPABASE_STORAGE_BUCKET_IMAGENES_PRODUCTOS',

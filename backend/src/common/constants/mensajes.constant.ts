@@ -8,4 +8,8 @@ export const MENSAJES = {
   REGISTRO_ELIMINADO: 'Registro eliminado correctamente',
   ROL_CREADO: 'Rol creado correctamente',
   ROL_ACTUALIZADO: 'Rol actualizado correctamente',
+  EMPLEADO_CREADO: 'Empleado creado correctamente',
+  EMPLEADO_ACTUALIZADO: 'Empleado actualizado correctamente',
+  USUARIO_CREADO: 'Usuario creado correctamente',
+  USUARIO_ACTUALIZADO: 'Usuario actualizado correctamente',
 } as const;

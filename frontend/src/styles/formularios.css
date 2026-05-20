@@ -112,10 +112,41 @@
   box-shadow: 0 0 0 4px rgba(0, 98, 65, 0.12);
 }
 
+.campo__control[readonly],
+.campo__control:disabled {
+  color: var(--color-texto-suave);
+  background: rgba(232, 246, 251, 0.55);
+}
+
 .campo__control--textarea {
   min-height: 108px;
   padding: 12px;
   resize: vertical;
+}
+
+.campo-contrasenia {
+  position: relative;
+  display: block;
+}
+
+.campo-contrasenia .campo__control {
+  padding-right: 52px;
+}
+
+.campo-contrasenia__toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radio);
+  color: var(--color-verde-profundo);
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
 }
 
 .campo__ayuda {

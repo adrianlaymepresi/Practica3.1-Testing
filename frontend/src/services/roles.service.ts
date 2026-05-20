@@ -7,12 +7,17 @@ import {
   ActualizarRolPayload,
   CrearRolPayload,
   Rol,
+  RolOpcion,
 } from '@/src/types/roles.types';
 
 export function listarRoles(parametros: ParametrosPaginacion) {
   return solicitarApi<RespuestaPaginada<Rol>>('/roles', {
     parametros,
   });
+}
+
+export function listarRolesOpciones() {
+  return solicitarApi<RolOpcion[]>('/roles/opciones');
 }
 
 export function crearRol(datos: CrearRolPayload) {

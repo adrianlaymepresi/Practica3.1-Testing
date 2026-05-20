@@ -1,10 +1,5 @@
-import { PanelEnConstruccion } from '@/src/components/layout/PanelEnConstruccion';
+import { EmpleadosPageClient } from './EmpleadosPageClient';
 
 export default function EmpleadosPage() {
-  return (
-    <PanelEnConstruccion
-      titulo="Empleados"
-      descripcion="Este apartado seguira inmediatamente despues de roles."
-    />
-  );
+  return <EmpleadosPageClient />;
 }

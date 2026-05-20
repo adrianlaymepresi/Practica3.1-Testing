@@ -21,8 +21,6 @@ export default registerAs('entorno', () => ({
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET ?? '',
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '1d',
-    refreshSecret: process.env.JWT_REFRESH_SECRET ?? '',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
   },
   supabase: {
     url: process.env.SUPABASE_URL ?? '',
@@ -32,7 +30,6 @@ export default registerAs('entorno', () => ({
   },
   cookies: {
     accessToken: process.env.COOKIE_ACCESS_TOKEN ?? 'token_acceso',
-    refreshToken: process.env.COOKIE_REFRESH_TOKEN ?? 'token_refresco',
     domain: process.env.COOKIE_DOMAIN ?? 'localhost',
     secure: obtenerBooleano(process.env.COOKIE_SECURE, false),
     sameSite: process.env.COOKIE_SAME_SITE ?? 'lax',

@@ -65,17 +65,17 @@ export const accesoRapidoDashboard = [
   },
   {
     titulo: 'Empleados',
-    descripcion: 'Preparado para continuar con el siguiente dominio.',
+    descripcion: 'Modulo disponible para gestionar personal y relaciones base.',
     href: '/empleados',
     icono: UserSquare2,
-    estado: 'Siguiente fase',
+    estado: 'Disponible ahora',
   },
   {
     titulo: 'Usuarios',
-    descripcion: 'Listo para integrarse sobre empleados y roles.',
+    descripcion: 'Modulo disponible con asignacion de empleado, rol y contrasenia cifrada.',
     href: '/usuarios',
     icono: UserRoundCog,
-    estado: 'Pendiente',
+    estado: 'Disponible ahora',
   },
   {
     titulo: 'Clientes',

@@ -16,6 +16,7 @@ export function Sidebar() {
         className="sidebar-control"
         id="sidebar-control"
         type="checkbox"
+        defaultChecked
         aria-label="Mostrar u ocultar menu"
       />
       <label className="sidebar-boton-movil" htmlFor="sidebar-control">

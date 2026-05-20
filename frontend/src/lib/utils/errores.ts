@@ -4,6 +4,16 @@ const ETIQUETAS_CAMPOS: Record<string, string> = {
   id_rol: 'Rol',
   nombre_rol: 'Nombre del rol',
   descripcion_rol: 'Descripcion del rol',
+  id_empleado: 'Empleado',
+  ci_empleado: 'CI del empleado',
+  nombres_completo_empleado: 'Nombres del empleado',
+  apellidos_completo_empleado: 'Apellidos del empleado',
+  correo_electronico_empleado: 'Correo del empleado',
+  fecha_nacimiento_empleado: 'Fecha de nacimiento',
+  telefono_empleado: 'Telefono del empleado',
+  id_usuario: 'Usuario',
+  nombre_usuario: 'Nombre de usuario',
+  contrasenia_usuario: 'Contrasenia',
 };
 
 function esErrorCampo(valor: unknown): valor is ErrorCampo {

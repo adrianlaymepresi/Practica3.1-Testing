@@ -20,6 +20,12 @@ export class RolesService {
     return this.rolesRepository.listarRoles(paginacion);
   }
 
+  async listarOpciones() {
+    return {
+      datos: await this.rolesRepository.listarOpcionesActivas(),
+    };
+  }
+
   obtenerPorId(idRol: string) {
     return this.rolesRepository.obtenerPorId(idRol);
   }
