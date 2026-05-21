@@ -8,11 +8,14 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ROLES_SISTEMA } from '../../common/constants/roles.constant';
+import { RolesPermitidos } from '../../common/decorators/roles.decorator';
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
 import { ActualizarUsuarioDto } from './dto/actualizar-usuario.dto';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
 import { UsuariosService } from './usuarios.service';
 
+@RolesPermitidos(ROLES_SISTEMA.ADMINISTRADOR)
 @Controller('usuarios')
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}

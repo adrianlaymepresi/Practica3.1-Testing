@@ -54,7 +54,7 @@
 }
 
 .pedido-resumen-formulario--detalle {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .resumen-pedido__tarjeta,
@@ -80,6 +80,7 @@
 .pedido-resumen-formulario__tarjeta strong {
   color: var(--color-verde-profundo);
   line-height: 1.5;
+  word-break: break-word;
 }
 
 .resumen-pedido__observacion {

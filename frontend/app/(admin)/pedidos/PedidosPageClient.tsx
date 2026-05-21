@@ -15,7 +15,10 @@ import { ModalFormulario } from '@/src/components/modales/ModalFormulario';
 import { Paginacion } from '@/src/components/paginacion/Paginacion';
 import { TablaPedidos } from '@/src/components/tablas/TablaPedidos';
 import { useErroresFormulario } from '@/src/hooks/useErroresFormulario';
-import { descargarReciboPedidoPdf } from '@/src/lib/utils/pedido-pdf';
+import {
+  descargarReciboPedidoPdf,
+  validarReciboPedido,
+} from '@/src/lib/utils/pedido-pdf';
 import { formatearEstadoRegistro } from '@/src/lib/utils/detalle-registro';
 import {
   formatearFechaHoraZonaHoraria,
@@ -50,6 +53,7 @@ import {
   CrearPedidoPayload,
   Pedido,
 } from '@/src/types/pedidos.types';
+import { ErrorCampo } from '@/src/types/api.types';
 
 type AccionConfirmacion =
   | 'archivar'
@@ -81,6 +85,10 @@ export function PedidosPageClient() {
   const [campoBusqueda, setCampoBusqueda] = useState('codigo_orden_pedido');
   const [estadoRegistro, setEstadoRegistro] =
     useState<EstadoRegistro>('activos');
+  const [alertaRecibo, setAlertaRecibo] = useState<{
+    mensaje: string;
+    errores: ErrorCampo[];
+  } | null>(null);
   const erroresFormulario = useErroresFormulario();
 
   async function cargarPedidos(
@@ -216,6 +224,20 @@ export function PedidosPageClient() {
           campoBusqueda: 'nombre_producto',
         }),
       ]);
+
+      const erroresRecibo = validarReciboPedido(
+        pedidoActualizado,
+        detallesRespuesta.registros,
+      );
+
+      if (erroresRecibo.length > 0) {
+        setAlertaRecibo({
+          mensaje:
+            'No se puede generar el recibo todavia. Revisa la informacion que falta en el pedido y sus detalles.',
+          errores: erroresRecibo,
+        });
+        return;
+      }
 
       descargarReciboPedidoPdf(
         pedidoActualizado,
@@ -432,6 +454,12 @@ export function PedidosPageClient() {
         mensaje={erroresFormulario.mensaje}
         errores={erroresFormulario.errores}
         alCerrar={erroresFormulario.limpiar}
+      />
+      <ModalErroresFormulario
+        abierto={Boolean(alertaRecibo)}
+        mensaje={alertaRecibo?.mensaje}
+        errores={alertaRecibo?.errores ?? []}
+        alCerrar={() => setAlertaRecibo(null)}
       />
       <ModalDetalleRegistro
         abierto={Boolean(pedidoDetalle)}

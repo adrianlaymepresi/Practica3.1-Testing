@@ -63,6 +63,7 @@ export function FormularioDetallePedido({
 
     return [detalleEdicion.producto, ...productos];
   }, [detalleEdicion, productos]);
+  const hayProductosDisponibles = productosDisponibles.length > 0;
 
   const productoSeleccionado = useMemo(
     () =>
@@ -167,7 +168,9 @@ export function FormularioDetallePedido({
           ))}
         </select>
         <span className="campo__ayuda">
-          Obligatorio. Solo se muestran productos activos con stock disponible.
+          {hayProductosDisponibles
+            ? 'Obligatorio. Solo se muestran productos activos con stock disponible y aun no registrados en este pedido.'
+            : 'No hay productos disponibles para agregar. Si necesitas cambiar uno existente, usa la opcion Editar del detalle ya creado.'}
         </span>
       </label>
       <InputTexto
@@ -242,6 +245,7 @@ export function FormularioDetallePedido({
           type="submit"
           icono={estaEditando ? <Pencil size={18} /> : <Plus size={18} />}
           cargando={enviando}
+          disabled={!productoSeleccionado}
         >
           {estaEditando ? 'Guardar detalle' : 'Agregar detalle'}
         </Boton>

@@ -22,6 +22,28 @@ export class DetallePedidosService {
     return this.detallePedidosRepository.listarDetallesPedido(idPedido, paginacion);
   }
 
+  async listarProductosDisponibles(idPedido: string, idDetalleActual?: string) {
+    await this.pedidosRepository.obtenerPorId(idPedido);
+
+    if (idDetalleActual) {
+      const detalle =
+        await this.detallePedidosRepository.obtenerDetalleConRelacionesPorId(
+          idDetalleActual,
+        );
+
+      if (detalle.id_orden_pedido !== idPedido) {
+        throw ApiException.noEncontrado('No se encontro el detalle solicitado');
+      }
+    }
+
+    return {
+      datos: await this.pedidosCatalogosRepository.listarProductosDisponiblesParaPedido(
+        idPedido,
+        idDetalleActual,
+      ),
+    };
+  }
+
   async crear(idPedido: string, crearDetallePedidoDto: CrearDetallePedidoDto) {
     const pedido = await this.obtenerPedidoGestionable(idPedido);
     const producto = await this.obtenerProductoActivoValidado(

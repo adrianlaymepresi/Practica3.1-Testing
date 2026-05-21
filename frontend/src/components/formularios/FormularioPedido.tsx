@@ -69,9 +69,17 @@ export function FormularioPedido({
   );
   const [enviando, setEnviando] = useState(false);
   const estaEditando = Boolean(pedidoEdicion);
-  const fechaMinimaPedido = estaEditando
-    ? undefined
-    : obtenerFechaHoraMinimaPedidoInputLocal();
+  const fechaMinimaOperativa = obtenerFechaHoraMinimaPedidoInputLocal();
+  const fechaOriginalFormateada = pedidoEdicion?.fecha_orden_pedido
+    ? formatearFechaHoraInputLocal(pedidoEdicion.fecha_orden_pedido)
+    : '';
+  const fechaCambio = !pedidoEdicion
+    ? true
+    : formulario.fecha_orden_pedido !== fechaOriginalFormateada;
+  const fechaMinimaPedido = !estaEditando || fechaCambio
+    ? fechaMinimaOperativa
+    : undefined;
+  const fechaMinimaOperativaTexto = fechaMinimaOperativa.replace('T', ' ');
 
   useEffect(() => {
     setFormulario(obtenerInicial(pedidoEdicion, codigoPedido));
@@ -82,13 +90,6 @@ export function FormularioPedido({
     setEnviando(true);
 
     try {
-      const fechaOriginalFormateada = pedidoEdicion?.fecha_orden_pedido
-        ? formatearFechaHoraInputLocal(pedidoEdicion.fecha_orden_pedido)
-        : '';
-      const fechaCambio =
-        !pedidoEdicion ||
-        formulario.fecha_orden_pedido !== fechaOriginalFormateada;
-
       if (
         fechaCambio &&
         !cumpleAnticipacionMinimaPedido(formulario.fecha_orden_pedido)
@@ -202,7 +203,11 @@ export function FormularioPedido({
       />
       <InputTexto
         etiqueta="Fecha del pedido"
-        ayuda="Obligatorio. Debe programarse con 24 horas exactas de anticipacion minima en horario de Bolivia y se guardara en UTC."
+        ayuda={
+          estaEditando
+            ? `Obligatorio. Si actualizas la fecha, debe quedar al menos 24 horas exactas adelante. Desde ahora solo se admite ${fechaMinimaOperativaTexto} en horario de Bolivia.`
+            : `Obligatorio. Debe programarse con 24 horas exactas de anticipacion minima en horario de Bolivia. Desde ahora solo se admite ${fechaMinimaOperativaTexto} y se guardara en UTC.`
+        }
         name="fecha_orden_pedido"
         type="datetime-local"
         value={formulario.fecha_orden_pedido}

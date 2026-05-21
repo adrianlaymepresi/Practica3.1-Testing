@@ -3,12 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, Package2, X } from 'lucide-react';
-import { rutasAdministracion } from '@/src/lib/constants/rutas';
+import { obtenerRutasVisibles } from '@/src/lib/auth/permisos';
+import { SesionActiva } from '@/src/types/auth.types';
 
-export function Sidebar() {
+interface SidebarProps {
+  sesion: SesionActiva;
+}
+
+export function Sidebar({ sesion }: SidebarProps) {
   const pathname = usePathname();
   const nombreApp =
     process.env.NEXT_PUBLIC_APP_NOMBRE ?? 'PRACTICA 3.1 TESTING';
+  const rutasVisibles = obtenerRutasVisibles(sesion.rol);
 
   return (
     <>
@@ -39,7 +45,7 @@ export function Sidebar() {
         </div>
 
         <nav className="sidebar__nav" aria-label="Menu principal">
-          {rutasAdministracion.map((ruta) => {
+          {rutasVisibles.map((ruta) => {
             const Icono = ruta.icono;
             const estaActivo =
               pathname === ruta.href || pathname.startsWith(`${ruta.href}/`);

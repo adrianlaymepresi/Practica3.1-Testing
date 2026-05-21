@@ -21,4 +21,8 @@ export const MENSAJES = {
   PEDIDO_ESTADO_ACTUALIZADO: 'Estado del pedido actualizado correctamente',
   DETALLE_PEDIDO_CREADO: 'Detalle del pedido creado correctamente',
   DETALLE_PEDIDO_ACTUALIZADO: 'Detalle del pedido actualizado correctamente',
+  SESION_INICIADA: 'Sesion iniciada correctamente',
+  SESION_CERRADA: 'Sesion cerrada correctamente',
+  NO_AUTORIZADO: 'No autorizado',
+  PROHIBIDO: 'No tienes permisos para realizar esta accion',
 } as const;

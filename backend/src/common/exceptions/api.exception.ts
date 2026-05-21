@@ -27,6 +27,14 @@ export class ApiException extends HttpException {
     return new ApiException(mensaje, HttpStatus.BAD_REQUEST, errores);
   }
 
+  static noAutorizado(mensaje: string = MENSAJES.NO_AUTORIZADO) {
+    return new ApiException(mensaje, HttpStatus.UNAUTHORIZED);
+  }
+
+  static prohibido(mensaje: string = MENSAJES.PROHIBIDO) {
+    return new ApiException(mensaje, HttpStatus.FORBIDDEN);
+  }
+
   static desdeSupabase(error: PostgrestError) {
     if (error.code === 'PGRST116') {
       return ApiException.noEncontrado();

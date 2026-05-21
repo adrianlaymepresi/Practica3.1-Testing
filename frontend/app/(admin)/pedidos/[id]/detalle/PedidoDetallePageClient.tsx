@@ -21,7 +21,10 @@ import { formatearEstadoRegistro } from '@/src/lib/utils/detalle-registro';
 import { formatearFechaHoraZonaHoraria } from '@/src/lib/utils/fechas';
 import { obtenerMensajeError } from '@/src/lib/utils/errores';
 import { crearPaginacionVacia } from '@/src/lib/utils/paginacion';
-import { descargarReciboPedidoPdf } from '@/src/lib/utils/pedido-pdf';
+import {
+  descargarReciboPedidoPdf,
+  validarReciboPedido,
+} from '@/src/lib/utils/pedido-pdf';
 import {
   esPedidoPendiente,
   formatearMontoPedido,
@@ -34,9 +37,9 @@ import {
   crearDetallePedido,
   eliminarDetallePedido,
   listarDetallesPedido,
+  listarProductosDisponiblesPedido,
   obtenerPedido,
 } from '@/src/services/pedidos.service';
-import { listarProductosOpciones } from '@/src/services/productos.service';
 import { ProductoOpcion } from '@/src/types/productos.types';
 import {
   ActualizarDetallePedidoPayload,
@@ -44,6 +47,7 @@ import {
   DetallePedido,
   Pedido,
 } from '@/src/types/pedidos.types';
+import { ErrorCampo } from '@/src/types/api.types';
 
 export function PedidoDetallePageClient() {
   const parametros = useParams<{ id: string }>();
@@ -62,6 +66,10 @@ export function PedidoDetallePageClient() {
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [campoBusqueda, setCampoBusqueda] = useState('nombre_producto');
+  const [alertaRecibo, setAlertaRecibo] = useState<{
+    mensaje: string;
+    errores: ErrorCampo[];
+  } | null>(null);
   const erroresFormulario = useErroresFormulario();
 
   const permiteEdicion = esPedidoPendiente(pedido);
@@ -112,6 +120,14 @@ export function PedidoDetallePageClient() {
     setPedido(respuesta);
   }
 
+  async function cargarProductosDisponibles(idDetalleActual?: string) {
+    const respuesta = await listarProductosDisponiblesPedido(
+      idPedido,
+      idDetalleActual,
+    );
+    setProductos(respuesta);
+  }
+
   async function cargarDetalles(
     pagina = paginacion.pagina,
     busquedaActual = busqueda,
@@ -151,8 +167,7 @@ export function PedidoDetallePageClient() {
       await crearDetallePedido(idPedido, datos);
       erroresFormulario.limpiar();
       setModalFormularioAbierto(false);
-      await cargarDetalles(1);
-      await cargarPedido();
+      await Promise.all([cargarDetalles(1), cargarPedido(), cargarProductosDisponibles()]);
     } catch (errorDesconocido) {
       erroresFormulario.mostrar(
         errorDesconocido,
@@ -171,8 +186,11 @@ export function PedidoDetallePageClient() {
       erroresFormulario.limpiar();
       setDetalleEdicion(null);
       setModalFormularioAbierto(false);
-      await cargarDetalles(paginacion.pagina);
-      await cargarPedido();
+      await Promise.all([
+        cargarDetalles(paginacion.pagina),
+        cargarPedido(),
+        cargarProductosDisponibles(),
+      ]);
     } catch (errorDesconocido) {
       erroresFormulario.mostrar(
         errorDesconocido,
@@ -192,8 +210,11 @@ export function PedidoDetallePageClient() {
     try {
       await eliminarDetallePedido(idPedido, detalleEliminacion.id_detalle_orden);
       setDetalleEliminacion(null);
-      await cargarDetalles(paginacion.pagina);
-      await cargarPedido();
+      await Promise.all([
+        cargarDetalles(paginacion.pagina),
+        cargarPedido(),
+        cargarProductosDisponibles(),
+      ]);
     } catch (errorDesconocido) {
       setError(
         obtenerMensajeError(errorDesconocido, 'No se pudo eliminar el detalle'),
@@ -214,6 +235,20 @@ export function PedidoDetallePageClient() {
         limite: 500,
         campoBusqueda: 'nombre_producto',
       });
+
+      const erroresRecibo = validarReciboPedido(
+        pedido,
+        detallesReporte.registros,
+      );
+
+      if (erroresRecibo.length > 0) {
+        setAlertaRecibo({
+          mensaje:
+            'No se puede generar el recibo todavia. Completa la informacion faltante del pedido antes de descargarlo.',
+          errores: erroresRecibo,
+        });
+        return;
+      }
 
       descargarReciboPedidoPdf(pedido, detallesReporte.registros);
     } catch (errorDesconocido) {
@@ -239,7 +274,7 @@ export function PedidoDetallePageClient() {
               limite: 10,
               campoBusqueda: 'nombre_producto',
             }),
-            listarProductosOpciones(),
+            listarProductosDisponiblesPedido(idPedido),
           ]);
 
         if (estaMontado) {
@@ -286,9 +321,10 @@ export function PedidoDetallePageClient() {
             variante="secundario"
             icono={<RefreshCcw size={17} />}
             onClick={async () => {
-              const productosRespuesta = await listarProductosOpciones();
-              setProductos(productosRespuesta);
-              await cargarDetalles(paginacion.pagina);
+              await Promise.all([
+                cargarProductosDisponibles(detalleEdicion?.id_detalle_orden),
+                cargarDetalles(paginacion.pagina),
+              ]);
             }}
             type="button"
           >
@@ -308,7 +344,16 @@ export function PedidoDetallePageClient() {
             onClick={() => {
               erroresFormulario.limpiar();
               setDetalleEdicion(null);
-              setModalFormularioAbierto(true);
+              void cargarProductosDisponibles()
+                .then(() => setModalFormularioAbierto(true))
+                .catch((errorDesconocido) =>
+                  setError(
+                    obtenerMensajeError(
+                      errorDesconocido,
+                      'No se pudo preparar el formulario del detalle',
+                    ),
+                  ),
+                );
             }}
             type="button"
             disabled={!permiteEdicion}
@@ -366,8 +411,19 @@ export function PedidoDetallePageClient() {
               alVerDetalle={setDetalleInfo}
               alEditar={(detalle) => {
                 erroresFormulario.limpiar();
-                setDetalleEdicion(detalle);
-                setModalFormularioAbierto(true);
+                void cargarProductosDisponibles(detalle.id_detalle_orden)
+                  .then(() => {
+                    setDetalleEdicion(detalle);
+                    setModalFormularioAbierto(true);
+                  })
+                  .catch((errorDesconocido) =>
+                    setError(
+                      obtenerMensajeError(
+                        errorDesconocido,
+                        'No se pudo preparar la edicion del detalle',
+                      ),
+                    ),
+                  );
               }}
               alEliminar={setDetalleEliminacion}
             />
@@ -408,6 +464,12 @@ export function PedidoDetallePageClient() {
         mensaje={erroresFormulario.mensaje}
         errores={erroresFormulario.errores}
         alCerrar={erroresFormulario.limpiar}
+      />
+      <ModalErroresFormulario
+        abierto={Boolean(alertaRecibo)}
+        mensaje={alertaRecibo?.mensaje}
+        errores={alertaRecibo?.errores ?? []}
+        alCerrar={() => setAlertaRecibo(null)}
       />
       <ModalDetalleRegistro
         abierto={Boolean(detalleInfo)}

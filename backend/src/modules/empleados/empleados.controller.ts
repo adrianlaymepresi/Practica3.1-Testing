@@ -8,11 +8,14 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ROLES_SISTEMA } from '../../common/constants/roles.constant';
+import { RolesPermitidos } from '../../common/decorators/roles.decorator';
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
 import { ActualizarEmpleadoDto } from './dto/actualizar-empleado.dto';
 import { CrearEmpleadoDto } from './dto/crear-empleado.dto';
 import { EmpleadosService } from './empleados.service';
 
+@RolesPermitidos(ROLES_SISTEMA.ADMINISTRADOR)
 @Controller('empleados')
 export class EmpleadosController {
   constructor(private readonly empleadosService: EmpleadosService) {}
@@ -23,6 +26,7 @@ export class EmpleadosController {
   }
 
   @Get('opciones')
+  @RolesPermitidos(ROLES_SISTEMA.ADMINISTRADOR, ROLES_SISTEMA.AYUDANTE)
   listarOpciones() {
     return this.empleadosService.listarOpciones();
   }

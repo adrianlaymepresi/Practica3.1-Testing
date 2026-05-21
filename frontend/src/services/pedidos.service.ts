@@ -13,11 +13,26 @@ import {
   Pedido,
   SiguienteCodigoPedido,
 } from '@/src/types/pedidos.types';
+import { ProductoOpcion } from '@/src/types/productos.types';
 
 export function listarPedidos(parametros: ParametrosPaginacion) {
   return solicitarApi<RespuestaPaginada<Pedido>>('/pedidos', {
     parametros,
   });
+}
+
+export function listarProductosDisponiblesPedido(
+  idPedido: string,
+  idDetalleActual?: string,
+) {
+  return solicitarApi<ProductoOpcion[]>(
+    `/pedidos/${idPedido}/productos-disponibles`,
+    {
+      parametros: {
+        idDetalleActual,
+      },
+    },
+  );
 }
 
 export function obtenerPedido(idPedido: string) {

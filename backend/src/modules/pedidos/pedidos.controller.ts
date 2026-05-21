@@ -8,6 +8,8 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ROLES_SISTEMA } from '../../common/constants/roles.constant';
+import { RolesPermitidos } from '../../common/decorators/roles.decorator';
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
 import { ActualizarDetallePedidoDto } from './dto/actualizar-detalle-pedido.dto';
 import { ActualizarPedidoDto } from './dto/actualizar-pedido.dto';
@@ -17,6 +19,7 @@ import { CrearPedidoDto } from './dto/crear-pedido.dto';
 import { DetallePedidosService } from './detalle-pedidos.service';
 import { PedidosService } from './pedidos.service';
 
+@RolesPermitidos(ROLES_SISTEMA.ADMINISTRADOR, ROLES_SISTEMA.AYUDANTE)
 @Controller('pedidos')
 export class PedidosController {
   constructor(
@@ -40,6 +43,17 @@ export class PedidosController {
     @Query() paginacion: PaginacionQueryDto,
   ) {
     return this.detallePedidosService.listar(idPedido, paginacion);
+  }
+
+  @Get(':id/productos-disponibles')
+  listarProductosDisponibles(
+    @Param('id') idPedido: string,
+    @Query('idDetalleActual') idDetalleActual?: string,
+  ) {
+    return this.detallePedidosService.listarProductosDisponibles(
+      idPedido,
+      idDetalleActual,
+    );
   }
 
   @Get(':id')

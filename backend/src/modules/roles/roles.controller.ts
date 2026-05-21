@@ -1,9 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { ROLES_SISTEMA } from '../../common/constants/roles.constant';
+import { RolesPermitidos } from '../../common/decorators/roles.decorator';
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
 import { ActualizarRolDto } from './dto/actualizar-rol.dto';
 import { CrearRolDto } from './dto/crear-rol.dto';
 import { RolesService } from './roles.service';
 
+@RolesPermitidos(ROLES_SISTEMA.ADMINISTRADOR)
 @Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}

@@ -1,4 +1,5 @@
 import { DetallePedido, Pedido } from '@/src/types/pedidos.types';
+import { ErrorCampo } from '@/src/types/api.types';
 import {
   formatearMontoPedido,
   obtenerNombreClientePedido,
@@ -126,6 +127,68 @@ function construirDocumentoPdf(lineas: string[]) {
   documento += `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${inicioXref}\n%%EOF`;
 
   return documento;
+}
+
+export function validarReciboPedido(
+  pedido: Pedido,
+  detalles: DetallePedido[],
+): ErrorCampo[] {
+  const errores: ErrorCampo[] = [];
+
+  if (!pedido.codigo_orden_pedido?.trim()) {
+    errores.push({
+      campo: 'codigo_orden_pedido',
+      mensajes: ['El pedido debe tener un codigo valido para generar el recibo'],
+    });
+  }
+
+  if (!pedido.cliente?.id_cliente) {
+    errores.push({
+      campo: 'id_cliente',
+      mensajes: ['Debes asignar un cliente valido al pedido'],
+    });
+  }
+
+  if (!pedido.empleado?.id_empleado) {
+    errores.push({
+      campo: 'id_empleado',
+      mensajes: ['Debes asignar un empleado valido al pedido'],
+    });
+  }
+
+  if (detalles.length === 0) {
+    errores.push({
+      campo: 'id_detalle_orden',
+      mensajes: [
+        'Debes registrar al menos un detalle de producto antes de descargar el recibo',
+      ],
+    });
+  }
+
+  if (Number(pedido.total_orden_pedido) <= 0) {
+    errores.push({
+      campo: 'total_orden_pedido',
+      mensajes: ['El total del pedido debe ser mayor a Bs 0,00'],
+    });
+  }
+
+  if (
+    detalles.some(
+      (detalle) =>
+        !detalle.producto?.id_producto ||
+        !detalle.producto?.nombre_producto?.trim() ||
+        Number(detalle.cantidad_detalle_orden) <= 0,
+    )
+  ) {
+    errores.push({
+      campo: 'id_detalle_orden',
+      mensajes: [
+        'Cada detalle debe tener un producto valido y una cantidad mayor a cero',
+      ],
+    });
+  }
+
+  return errores;
 }
 
 export function descargarReciboPedidoPdf(

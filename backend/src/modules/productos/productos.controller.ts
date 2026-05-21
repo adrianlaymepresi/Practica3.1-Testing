@@ -11,12 +11,15 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ROLES_SISTEMA } from '../../common/constants/roles.constant';
+import { RolesPermitidos } from '../../common/decorators/roles.decorator';
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
 import type { ArchivoSubido } from '../../common/utils/archivos.util';
 import { ActualizarProductoDto } from './dto/actualizar-producto.dto';
 import { CrearProductoDto } from './dto/crear-producto.dto';
 import { ProductosService } from './productos.service';
 
+@RolesPermitidos(ROLES_SISTEMA.ADMINISTRADOR, ROLES_SISTEMA.AYUDANTE)
 @Controller('productos')
 export class ProductosController {
   constructor(private readonly productosService: ProductosService) {}
