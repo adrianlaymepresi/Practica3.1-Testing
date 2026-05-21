@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { AuthController } from '../../src/modules/auth/auth.controller';
@@ -13,6 +14,7 @@ import {
   crearAppHttpPrueba,
   crearCabeceraAutorizacion,
   crearClientePrueba,
+  crearMockResuelto,
   crearPedidoPrueba,
   crearProductoPrueba,
   crearRespuestaPaginada,
@@ -25,7 +27,7 @@ describe('P-05. Prueba de humo', () => {
   const servicioAuth = {
     iniciarSesion: jest.fn(),
     cerrarSesion: jest.fn(),
-    obtenerPerfil: jest.fn().mockResolvedValue({
+    obtenerPerfil: crearMockResuelto({
       datos: {
         id_usuario: '11111111-1111-4111-8111-111111111111',
         id_empleado: '22222222-2222-4222-8222-222222222222',
@@ -40,17 +42,13 @@ describe('P-05. Prueba de humo', () => {
     }),
   };
   const servicioClientes = {
-    listar: jest
-      .fn()
-      .mockResolvedValue(crearRespuestaPaginada([crearClientePrueba()])),
+    listar: crearMockResuelto(crearRespuestaPaginada([crearClientePrueba()])),
   };
   const servicioProductos = {
-    listar: jest
-      .fn()
-      .mockResolvedValue(crearRespuestaPaginada([crearProductoPrueba()])),
+    listar: crearMockResuelto(crearRespuestaPaginada([crearProductoPrueba()])),
   };
   const servicioPedidos = {
-    listar: jest.fn().mockResolvedValue(crearRespuestaPaginada([crearPedidoPrueba()])),
+    listar: crearMockResuelto(crearRespuestaPaginada([crearPedidoPrueba()])),
   };
   const servicioDetalles = {
     listar: jest.fn(),
@@ -85,7 +83,9 @@ describe('P-05. Prueba de humo', () => {
   });
 
   it('responde 401 controlado en auth/perfil cuando no hay sesion', async () => {
-    const respuesta = await request(app.getHttpServer()).get('/api/auth/perfil');
+    const respuesta = await request(app.getHttpServer()).get(
+      '/api/auth/perfil',
+    );
 
     expect(respuesta.status).toBe(401);
     expect(respuesta.body).toMatchObject({

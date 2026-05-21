@@ -1,6 +1,8 @@
+import { describe, expect, it } from '@jest/globals';
 import { DetallePedidosService } from '../../src/modules/pedidos/detalle-pedidos.service';
 import {
   crearDetallePedidoPrueba,
+  crearMockResuelto,
   crearPedidoPrueba,
   crearProductoPrueba,
 } from './soporte-pruebas';
@@ -33,23 +35,23 @@ describe('P-01. Prueba de integracion ascendente', () => {
     });
 
     const pedidosRepository = {
-      obtenerPorId: jest.fn().mockResolvedValue(pedidoBase),
-      actualizar: jest.fn().mockResolvedValue({
+      obtenerPorId: crearMockResuelto(pedidoBase),
+      actualizar: crearMockResuelto({
         ...pedidoBase,
         subtotal_orden_pedido: 30000,
         total_orden_pedido: 30000,
       }),
     };
     const detallePedidosRepository = {
-      existeProductoEnPedido: jest.fn().mockResolvedValue(false),
-      crear: jest.fn().mockResolvedValue(detalleCreado),
-      eliminarFisico: jest.fn().mockResolvedValue(undefined),
-      obtenerDetalleConRelacionesPorId: jest.fn().mockResolvedValue(detalleCreado),
+      existeProductoEnPedido: crearMockResuelto(false),
+      crear: crearMockResuelto(detalleCreado),
+      eliminarFisico: crearMockResuelto(undefined),
+      obtenerDetalleConRelacionesPorId: crearMockResuelto(detalleCreado),
     };
     const pedidosCatalogosRepository = {
-      buscarProductoActivoPorId: jest.fn().mockResolvedValue(productoBase),
-      buscarProductoPorId: jest.fn().mockResolvedValue(productoBase),
-      actualizarStockProducto: jest.fn().mockResolvedValue({
+      buscarProductoActivoPorId: crearMockResuelto(productoBase),
+      buscarProductoPorId: crearMockResuelto(productoBase),
+      actualizarStockProducto: crearMockResuelto({
         ...productoBase,
         stock_producto: 10,
       }),
@@ -73,10 +75,9 @@ describe('P-01. Prueba de integracion ascendente', () => {
       precio_unitario_detalle_orden: 15000,
       subtotal_detalle_orden: 30000,
     });
-    expect(pedidosCatalogosRepository.actualizarStockProducto).toHaveBeenCalledWith(
-      productoBase.id_producto,
-      10,
-    );
+    expect(
+      pedidosCatalogosRepository.actualizarStockProducto,
+    ).toHaveBeenCalledWith(productoBase.id_producto, 10);
     expect(pedidosRepository.actualizar).toHaveBeenCalledWith(
       pedidoBase.id_orden_pedido,
       expect.objectContaining({

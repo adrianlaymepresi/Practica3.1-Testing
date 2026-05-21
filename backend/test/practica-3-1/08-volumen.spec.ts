@@ -1,3 +1,4 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { ProductosRepository } from '../../src/modules/productos/productos.repository';
 import { Producto } from '../../src/modules/productos/interfaces/producto.interface';
 
@@ -52,7 +53,10 @@ function crearConsultaProductos(productos: Producto[]) {
       return consulta;
     }),
     ilike: jest.fn((campo: string, valor: string) => {
-      estado.busqueda = { campo, valor: valor.replaceAll('%', '').toUpperCase() };
+      estado.busqueda = {
+        campo,
+        valor: valor.replaceAll('%', '').toUpperCase(),
+      };
       return consulta;
     }),
     order: jest.fn((campo: string, opciones: { ascending: boolean }) => {
@@ -70,7 +74,9 @@ function crearConsultaProductos(productos: Producto[]) {
       }
 
       if (estado.filtrarEliminados) {
-        registros = registros.filter((producto) => producto.deleted_at === null);
+        registros = registros.filter(
+          (producto) => producto.deleted_at === null,
+        );
       }
 
       if (estado.busqueda) {

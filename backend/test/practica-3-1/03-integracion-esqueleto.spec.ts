@@ -1,9 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { DetallePedidosService } from '../../src/modules/pedidos/detalle-pedidos.service';
 import { PedidosService } from '../../src/modules/pedidos/pedidos.service';
 import {
   crearClientePrueba,
   crearEmpleadoPrueba,
   crearFechaFuturaIso,
+  crearMockResuelto,
   crearPedidoPrueba,
   crearProductoPrueba,
   crearUsuarioJwtPrueba,
@@ -47,42 +49,60 @@ describe('P-03. Prueba de integracion del esqueleto', () => {
         url_imagen_producto: string | null;
       };
     }> = [];
+    type DetallePedidoPrueba = (typeof detalles)[number];
+    type DatosDetallePedidoPrueba = Omit<
+      DetallePedidoPrueba,
+      'id_detalle_orden' | 'created_at' | 'updated_at' | 'producto'
+    >;
 
     const pedidosRepository = {
       listarPedidos: jest.fn(),
       obtenerPedidoConRelacionesPorId: jest.fn(async () => pedidoActual),
-      contarPedidosRegistrados: jest.fn().mockResolvedValue(0),
-      existeCodigoPedido: jest.fn().mockResolvedValue(false),
-      crear: jest.fn(async (datos) => {
-        pedidoActual = {
-          ...pedidoActual,
-          ...datos,
-          id_orden_pedido: pedidoActual.id_orden_pedido,
-          codigo_orden_pedido: datos.codigo_orden_pedido,
-        };
-        return pedidoActual;
-      }),
+      contarPedidosRegistrados: crearMockResuelto(0),
+      existeCodigoPedido: crearMockResuelto(false),
+      crear: jest.fn(
+        async (
+          datos: Partial<typeof pedidoActual> & {
+            codigo_orden_pedido: string;
+          },
+        ) => {
+          pedidoActual = {
+            ...pedidoActual,
+            ...datos,
+            id_orden_pedido: pedidoActual.id_orden_pedido,
+            codigo_orden_pedido: datos.codigo_orden_pedido,
+          };
+          return pedidoActual;
+        },
+      ),
       obtenerPorId: jest.fn(async () => pedidoActual),
-      actualizar: jest.fn(async (_idPedido, datos) => {
-        pedidoActual = {
-          ...pedidoActual,
-          ...datos,
-        };
-        return pedidoActual;
-      }),
+      actualizar: jest.fn(
+        async (_idPedido: string, datos: Partial<typeof pedidoActual>) => {
+          pedidoActual = {
+            ...pedidoActual,
+            ...datos,
+          };
+          return pedidoActual;
+        },
+      ),
     };
     const detallePedidosRepository = {
       listarTodosPorPedido: jest.fn(async () => detalles),
       listarDetallesPedido: jest.fn(),
-      existeProductoEnPedido: jest.fn(async (_idPedido, idProducto, idDetalleActual) =>
-        detalles.some(
-          (detalle) =>
-            detalle.id_producto === idProducto &&
-            detalle.id_detalle_orden !== idDetalleActual,
-        ),
+      existeProductoEnPedido: jest.fn(
+        async (
+          _idPedido: string,
+          idProducto: string,
+          idDetalleActual?: string,
+        ) =>
+          detalles.some(
+            (detalle) =>
+              detalle.id_producto === idProducto &&
+              detalle.id_detalle_orden !== idDetalleActual,
+          ),
       ),
-      crear: jest.fn(async (datos) => {
-        const detalleCreado = {
+      crear: jest.fn(async (datos: DatosDetallePedidoPrueba) => {
+        const detalleCreado: DetallePedidoPrueba = {
           id_detalle_orden: '99999999-9999-4999-8999-999999999999',
           created_at: pedidoActual.created_at,
           updated_at: pedidoActual.updated_at,
@@ -99,7 +119,7 @@ describe('P-03. Prueba de integracion del esqueleto', () => {
         detalles.push(detalleCreado);
         return detalleCreado;
       }),
-      obtenerDetalleConRelacionesPorId: jest.fn(async (idDetalle) => {
+      obtenerDetalleConRelacionesPorId: jest.fn(async (idDetalle: string) => {
         const detalle = detalles.find(
           (detalleActual) => detalleActual.id_detalle_orden === idDetalle,
         );
@@ -119,13 +139,15 @@ describe('P-03. Prueba de integracion del esqueleto', () => {
       buscarEmpleadoActivoPorUsuarioId: jest.fn(async () => empleado),
       buscarProductoActivoPorId: jest.fn(async () => producto),
       buscarProductoPorId: jest.fn(async () => producto),
-      actualizarStockProducto: jest.fn(async (_idProducto, stockNuevo) => {
-        producto.stock_producto = stockNuevo;
-        return producto;
-      }),
+      actualizarStockProducto: jest.fn(
+        async (_idProducto: string, stockNuevo: number) => {
+          producto.stock_producto = stockNuevo;
+          return producto;
+        },
+      ),
     };
     const referenciasRepository = {
-      contarPorCampo: jest.fn().mockResolvedValue(0),
+      contarPorCampo: crearMockResuelto(0),
     };
 
     const servicioPedidos = new PedidosService(

@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PedidosController } from '../../src/modules/pedidos/pedidos.controller';
@@ -6,6 +7,7 @@ import { PedidosService } from '../../src/modules/pedidos/pedidos.service';
 import {
   crearCabeceraAutorizacion,
   crearFechaFuturaIso,
+  crearMockResuelto,
   crearPedidoPrueba,
   crearTokenPrueba,
   crearUsuarioJwtPrueba,
@@ -17,7 +19,7 @@ describe('P-04. Prueba de sanidad', () => {
   const usuario = crearUsuarioJwtPrueba();
   const token = crearTokenPrueba(usuario);
   const servicioPedidos = {
-    crear: jest.fn().mockResolvedValue({
+    crear: crearMockResuelto({
       mensaje: 'Pedido creado correctamente',
       datos: crearPedidoPrueba({
         codigo_orden_pedido: 'PEDIDO-25',

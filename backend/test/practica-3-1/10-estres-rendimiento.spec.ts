@@ -1,4 +1,5 @@
-import request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import request, { Response } from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PedidosController } from '../../src/modules/pedidos/pedidos.controller';
 import { DetallePedidosService } from '../../src/modules/pedidos/detalle-pedidos.service';
@@ -53,7 +54,7 @@ describe('P-10. Prueba de estres y rendimiento', () => {
     const totalSolicitudes = 80;
     const tamanoLote = 20;
     const inicio = Date.now();
-    const respuestas = [];
+    const respuestas: Response[] = [];
 
     for (let indice = 0; indice < totalSolicitudes; indice += tamanoLote) {
       const lote = Array.from({ length: tamanoLote }, () =>

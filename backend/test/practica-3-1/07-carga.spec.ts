@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { ProductosController } from '../../src/modules/productos/productos.controller';

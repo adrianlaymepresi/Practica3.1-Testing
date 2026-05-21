@@ -1,0 +1,4 @@
+{
+  "version": "0.2",
+  "ignorePaths": ["test/practica-3-1/**/*.ts"]
+}

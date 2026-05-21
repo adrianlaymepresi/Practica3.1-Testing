@@ -1,8 +1,13 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { jest } from '@jest/globals';
+import {
+  INestApplication,
+  Provider,
+  Type,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
-import { Type } from '@nestjs/common/interfaces';
 import { FiltroGlobalExcepciones } from '../../src/common/filters/filtro-global-excepciones';
 import { JwtAuthGuard } from '../../src/common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../src/common/guards/roles.guard';
@@ -15,7 +20,10 @@ import { DetallePedidoRegistro } from '../../src/modules/pedidos/interfaces/deta
 import { Producto } from '../../src/modules/productos/interfaces/producto.interface';
 import { Cliente } from '../../src/modules/clientes/interfaces/cliente.interface';
 import { Empleado } from '../../src/modules/empleados/interfaces/empleado.interface';
-import { ROLES_SISTEMA, RolSistema } from '../../src/common/constants/roles.constant';
+import {
+  ROLES_SISTEMA,
+  RolSistema,
+} from '../../src/common/constants/roles.constant';
 
 const FECHA_BASE = '2026-05-21T12:00:00.000Z';
 const JWT_SECRETO_PRUEBA = 'secreto-jwt-pruebas';
@@ -41,9 +49,19 @@ export function crearTokenPrueba(usuario = crearUsuarioJwtPrueba()) {
   return crearJwtHs256(usuario, JWT_SECRETO_PRUEBA, '1d');
 }
 
-export function crearClientePrueba(
-  parcial: Partial<Cliente> = {},
-): Cliente {
+export function crearMockResuelto<TValor>(valor: TValor) {
+  return jest
+    .fn<(...argumentos: unknown[]) => Promise<TValor>>()
+    .mockResolvedValue(valor);
+}
+
+export function crearMockRechazado(error: unknown) {
+  return jest
+    .fn<(...argumentos: unknown[]) => Promise<never>>()
+    .mockRejectedValue(error);
+}
+
+export function crearClientePrueba(parcial: Partial<Cliente> = {}): Cliente {
   return {
     id_cliente: '33333333-3333-4333-8333-333333333333',
     ci_cliente: '31313131',
@@ -60,9 +78,7 @@ export function crearClientePrueba(
   };
 }
 
-export function crearEmpleadoPrueba(
-  parcial: Partial<Empleado> = {},
-): Empleado {
+export function crearEmpleadoPrueba(parcial: Partial<Empleado> = {}): Empleado {
   return {
     id_empleado: '22222222-2222-4222-8222-222222222222',
     ci_empleado: '12121212',
@@ -79,9 +95,7 @@ export function crearEmpleadoPrueba(
   };
 }
 
-export function crearProductoPrueba(
-  parcial: Partial<Producto> = {},
-): Producto {
+export function crearProductoPrueba(parcial: Partial<Producto> = {}): Producto {
   return {
     id_producto: '44444444-4444-4444-8444-444444444444',
     codigo_producto: 'APPLE-1',
@@ -111,7 +125,8 @@ export function crearPedidoPrueba(
   return {
     id_orden_pedido: '55555555-5555-4555-8555-555555555555',
     id_cliente: cliente?.id_cliente ?? '33333333-3333-4333-8333-333333333333',
-    id_empleado: empleado?.id_empleado ?? '22222222-2222-4222-8222-222222222222',
+    id_empleado:
+      empleado?.id_empleado ?? '22222222-2222-4222-8222-222222222222',
     codigo_orden_pedido: 'PEDIDO-1',
     fecha_orden_pedido: crearFechaFuturaIso(),
     estado_orden_pedido: 'PENDIENTE',
@@ -137,7 +152,8 @@ export function crearDetallePedidoPrueba(
   return {
     id_detalle_orden: '66666666-6666-4666-8666-666666666666',
     id_orden_pedido: '55555555-5555-4555-8555-555555555555',
-    id_producto: producto?.id_producto ?? '44444444-4444-4444-8444-444444444444',
+    id_producto:
+      producto?.id_producto ?? '44444444-4444-4444-8444-444444444444',
     cantidad_detalle_orden: 1,
     precio_unitario_detalle_orden: 15000,
     subtotal_detalle_orden: 15000,
@@ -164,7 +180,7 @@ export function crearRespuestaPaginada<TRegistro>(registros: TRegistro[]) {
 
 interface OpcionesAppHttpPrueba {
   controllers: Type<unknown>[];
-  providers: Array<{ provide: unknown; useValue: unknown } | Type<unknown>>;
+  providers: Provider[];
   aplicarGuards?: boolean;
 }
 

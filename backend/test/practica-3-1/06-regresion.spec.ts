@@ -1,8 +1,6 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { DetallePedidosService } from '../../src/modules/pedidos/detalle-pedidos.service';
-import {
-  crearPedidoPrueba,
-  crearProductoPrueba,
-} from './soporte-pruebas';
+import { crearPedidoPrueba, crearProductoPrueba } from './soporte-pruebas';
 
 describe('P-06. Prueba de regresion', () => {
   it('mantiene consistente el stock y el total cuando un detalle se crea, edita y elimina', async () => {
@@ -15,41 +13,53 @@ describe('P-06. Prueba de regresion', () => {
       precio_producto: 15000,
       stock_producto: 12,
     });
-    let detalleActual:
-      | {
-          id_detalle_orden: string;
-          id_orden_pedido: string;
-          id_producto: string;
-          cantidad_detalle_orden: number;
-          precio_unitario_detalle_orden: number;
-          subtotal_detalle_orden: number;
-          created_at: string;
-          updated_at: string;
-          producto: {
-            id_producto: string;
-            codigo_producto: string;
-            nombre_producto: string;
-            precio_producto: number;
-            stock_producto: number;
-            url_imagen_producto: string | null;
-          };
-        }
-      | null = null;
+    type DetallePedidoPrueba = {
+      id_detalle_orden: string;
+      id_orden_pedido: string;
+      id_producto: string;
+      cantidad_detalle_orden: number;
+      precio_unitario_detalle_orden: number;
+      subtotal_detalle_orden: number;
+      created_at: string;
+      updated_at: string;
+      producto: {
+        id_producto: string;
+        codigo_producto: string;
+        nombre_producto: string;
+        precio_producto: number;
+        stock_producto: number;
+        url_imagen_producto: string | null;
+      };
+    };
+    let detalleActual: DetallePedidoPrueba | null = null;
+    type DatosDetallePedidoPrueba = Omit<
+      DetallePedidoPrueba,
+      'id_detalle_orden' | 'created_at' | 'updated_at' | 'producto'
+    >;
+    type DatosActualizacionPedidoPrueba = Pick<
+      typeof pedido,
+      | 'subtotal_orden_pedido'
+      | 'descuento_orden_pedido'
+      | 'total_orden_pedido'
+      | 'updated_at'
+    >;
 
     const pedidosRepository = {
       obtenerPorId: jest.fn(async () => pedido),
-      actualizar: jest.fn(async (_idPedido, datos) => {
-        pedido.subtotal_orden_pedido = datos.subtotal_orden_pedido;
-        pedido.descuento_orden_pedido = datos.descuento_orden_pedido;
-        pedido.total_orden_pedido = datos.total_orden_pedido;
-        pedido.updated_at = datos.updated_at;
-        return pedido;
-      }),
+      actualizar: jest.fn(
+        async (_idPedido: string, datos: DatosActualizacionPedidoPrueba) => {
+          pedido.subtotal_orden_pedido = datos.subtotal_orden_pedido;
+          pedido.descuento_orden_pedido = datos.descuento_orden_pedido;
+          pedido.total_orden_pedido = datos.total_orden_pedido;
+          pedido.updated_at = datos.updated_at;
+          return pedido;
+        },
+      ),
     };
     const detallePedidosRepository = {
       listarDetallesPedido: jest.fn(),
       existeProductoEnPedido: jest.fn(async () => false),
-      crear: jest.fn(async (datos) => {
+      crear: jest.fn(async (datos: DatosDetallePedidoPrueba) => {
         detalleActual = {
           id_detalle_orden: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
           created_at: pedido.created_at,
@@ -73,22 +83,27 @@ describe('P-06. Prueba de regresion', () => {
 
         return detalleActual;
       }),
-      actualizar: jest.fn(async (_idDetalle, datos) => {
-        if (!detalleActual) {
-          throw new Error('Detalle no encontrado');
-        }
+      actualizar: jest.fn(
+        async (
+          _idDetalle: string,
+          datos: Partial<DatosDetallePedidoPrueba>,
+        ) => {
+          if (!detalleActual) {
+            throw new Error('Detalle no encontrado');
+          }
 
-        detalleActual = {
-          ...detalleActual,
-          ...datos,
-          producto: {
-            ...detalleActual.producto,
-            stock_producto: producto.stock_producto,
-          },
-        };
+          detalleActual = {
+            ...detalleActual,
+            ...datos,
+            producto: {
+              ...detalleActual.producto,
+              stock_producto: producto.stock_producto,
+            },
+          };
 
-        return detalleActual;
-      }),
+          return detalleActual;
+        },
+      ),
       eliminarFisico: jest.fn(async () => {
         detalleActual = null;
       }),
@@ -96,10 +111,12 @@ describe('P-06. Prueba de regresion', () => {
     const pedidosCatalogosRepository = {
       buscarProductoActivoPorId: jest.fn(async () => producto),
       buscarProductoPorId: jest.fn(async () => producto),
-      actualizarStockProducto: jest.fn(async (_idProducto, stockNuevo) => {
-        producto.stock_producto = stockNuevo;
-        return producto;
-      }),
+      actualizarStockProducto: jest.fn(
+        async (_idProducto: string, stockNuevo: number) => {
+          producto.stock_producto = stockNuevo;
+          return producto;
+        },
+      ),
     };
 
     const servicio = new DetallePedidosService(

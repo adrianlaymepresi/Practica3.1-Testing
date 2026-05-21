@@ -1,6 +1,11 @@
+import { describe, expect, it, jest } from '@jest/globals';
 import { DetallePedidosService } from '../../src/modules/pedidos/detalle-pedidos.service';
 import { HttpException } from '@nestjs/common';
-import { crearPedidoPrueba, crearProductoPrueba } from './soporte-pruebas';
+import {
+  crearMockResuelto,
+  crearPedidoPrueba,
+  crearProductoPrueba,
+} from './soporte-pruebas';
 
 describe('P-02. Prueba de integracion ad hoc', () => {
   it('permite usar un producto activo con stock dentro de un detalle de pedido', async () => {
@@ -11,16 +16,16 @@ describe('P-02. Prueba de integracion ad hoc', () => {
     });
 
     const pedidosRepository = {
-      obtenerPorId: jest.fn().mockResolvedValue(pedidoBase),
-      actualizar: jest.fn().mockResolvedValue(undefined),
+      obtenerPorId: crearMockResuelto(pedidoBase),
+      actualizar: crearMockResuelto(undefined),
     };
     const detallePedidosRepository = {
-      existeProductoEnPedido: jest.fn().mockResolvedValue(false),
-      crear: jest.fn().mockResolvedValue({
+      existeProductoEnPedido: crearMockResuelto(false),
+      crear: crearMockResuelto({
         id_detalle_orden: '77777777-7777-4777-8777-777777777777',
       }),
-      eliminarFisico: jest.fn().mockResolvedValue(undefined),
-      obtenerDetalleConRelacionesPorId: jest.fn().mockResolvedValue({
+      eliminarFisico: crearMockResuelto(undefined),
+      obtenerDetalleConRelacionesPorId: crearMockResuelto({
         id_detalle_orden: '77777777-7777-4777-8777-777777777777',
         id_orden_pedido: pedidoBase.id_orden_pedido,
         id_producto: productoBase.id_producto,
@@ -40,9 +45,9 @@ describe('P-02. Prueba de integracion ad hoc', () => {
       }),
     };
     const pedidosCatalogosRepository = {
-      buscarProductoActivoPorId: jest.fn().mockResolvedValue(productoBase),
-      buscarProductoPorId: jest.fn().mockResolvedValue(productoBase),
-      actualizarStockProducto: jest.fn().mockResolvedValue({
+      buscarProductoActivoPorId: crearMockResuelto(productoBase),
+      buscarProductoPorId: crearMockResuelto(productoBase),
+      actualizarStockProducto: crearMockResuelto({
         ...productoBase,
         stock_producto: 4,
       }),
@@ -60,10 +65,9 @@ describe('P-02. Prueba de integracion ad hoc', () => {
     });
 
     expect(resultado.datos.precio_unitario_detalle_orden).toBe(21000);
-    expect(pedidosCatalogosRepository.actualizarStockProducto).toHaveBeenCalledWith(
-      productoBase.id_producto,
-      4,
-    );
+    expect(
+      pedidosCatalogosRepository.actualizarStockProducto,
+    ).toHaveBeenCalledWith(productoBase.id_producto, 4);
   });
 
   it('bloquea el uso del producto cuando no tiene stock disponible', async () => {
@@ -73,18 +77,18 @@ describe('P-02. Prueba de integracion ad hoc', () => {
     });
 
     const pedidosRepository = {
-      obtenerPorId: jest.fn().mockResolvedValue(pedidoBase),
+      obtenerPorId: crearMockResuelto(pedidoBase),
       actualizar: jest.fn(),
     };
     const detallePedidosRepository = {
-      existeProductoEnPedido: jest.fn().mockResolvedValue(false),
+      existeProductoEnPedido: crearMockResuelto(false),
       crear: jest.fn(),
       eliminarFisico: jest.fn(),
       obtenerDetalleConRelacionesPorId: jest.fn(),
     };
     const pedidosCatalogosRepository = {
-      buscarProductoActivoPorId: jest.fn().mockResolvedValue(productoSinStock),
-      buscarProductoPorId: jest.fn().mockResolvedValue(productoSinStock),
+      buscarProductoActivoPorId: crearMockResuelto(productoSinStock),
+      buscarProductoPorId: crearMockResuelto(productoSinStock),
       actualizarStockProducto: jest.fn(),
     };
 
@@ -95,9 +99,9 @@ describe('P-02. Prueba de integracion ad hoc', () => {
     );
 
     const promesa = servicio.crear(pedidoBase.id_orden_pedido, {
-        id_producto: productoSinStock.id_producto,
-        cantidad_detalle_orden: 1,
-      });
+      id_producto: productoSinStock.id_producto,
+      cantidad_detalle_orden: 1,
+    });
 
     await expect(promesa).rejects.toBeInstanceOf(HttpException);
     await expect(promesa).rejects.toMatchObject({
@@ -107,6 +111,8 @@ describe('P-02. Prueba de integracion ad hoc', () => {
     });
 
     expect(detallePedidosRepository.crear).not.toHaveBeenCalled();
-    expect(pedidosCatalogosRepository.actualizarStockProducto).not.toHaveBeenCalled();
+    expect(
+      pedidosCatalogosRepository.actualizarStockProducto,
+    ).not.toHaveBeenCalled();
   });
 });
