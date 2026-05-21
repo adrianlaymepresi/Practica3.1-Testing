@@ -18,6 +18,7 @@ export const MENSAJES = {
   PRODUCTO_ACTUALIZADO: 'Producto actualizado correctamente',
   PEDIDO_CREADO: 'Pedido creado correctamente',
   PEDIDO_ACTUALIZADO: 'Pedido actualizado correctamente',
+  PEDIDO_ESTADO_ACTUALIZADO: 'Estado del pedido actualizado correctamente',
   DETALLE_PEDIDO_CREADO: 'Detalle del pedido creado correctamente',
   DETALLE_PEDIDO_ACTUALIZADO: 'Detalle del pedido actualizado correctamente',
 } as const;

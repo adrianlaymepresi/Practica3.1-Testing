@@ -1,19 +1,19 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Pencil, Plus, X } from 'lucide-react';
 import { Boton } from '@/src/components/comunes/Boton';
 import { InputTexto } from '@/src/components/comunes/InputTexto';
 import {
+  cumpleAnticipacionMinimaPedido,
   convertirFechaHoraInputLocalAUTC,
   formatearFechaHoraInputLocal,
-  obtenerFechaHoraActualInputLocal,
+  obtenerFechaHoraMinimaPedidoInputLocal,
 } from '@/src/lib/utils/fechas';
 import { normalizarDecimalNoNegativo } from '@/src/lib/utils/formularios';
 import {
   ESTADO_PEDIDO_DEFECTO,
   normalizarObservacionPedido,
-  normalizarTextoPedido,
   obtenerNombreClientePedido,
   obtenerNombreEmpleadoPedido,
 } from '@/src/lib/utils/pedidos';
@@ -27,6 +27,7 @@ import {
 
 interface FormularioPedidoProps {
   pedidoEdicion?: Pedido | null;
+  codigoPedido: string;
   clientes: ClienteOpcion[];
   empleados: EmpleadoOpcion[];
   alCrear: (datos: CrearPedidoPayload) => Promise<void>;
@@ -37,14 +38,14 @@ interface FormularioPedidoProps {
   alCancelarEdicion: () => void;
 }
 
-function obtenerInicial(pedido?: Pedido | null) {
+function obtenerInicial(pedido?: Pedido | null, codigoPedido = '') {
   return {
     id_cliente: pedido?.id_cliente ?? '',
     id_empleado: pedido?.id_empleado ?? '',
-    codigo_orden_pedido: pedido?.codigo_orden_pedido ?? '',
+    codigo_orden_pedido: pedido?.codigo_orden_pedido ?? codigoPedido,
     fecha_orden_pedido: pedido?.fecha_orden_pedido
       ? formatearFechaHoraInputLocal(pedido.fecha_orden_pedido)
-      : obtenerFechaHoraActualInputLocal(),
+      : obtenerFechaHoraMinimaPedidoInputLocal(),
     estado_orden_pedido: pedido?.estado_orden_pedido ?? ESTADO_PEDIDO_DEFECTO,
     observacion_orden_pedido: pedido?.observacion_orden_pedido ?? '',
     descuento_orden_pedido:
@@ -56,39 +57,77 @@ function obtenerInicial(pedido?: Pedido | null) {
 
 export function FormularioPedido({
   pedidoEdicion,
+  codigoPedido,
   clientes,
   empleados,
   alCrear,
   alActualizar,
   alCancelarEdicion,
 }: FormularioPedidoProps) {
-  const [formulario, setFormulario] = useState(obtenerInicial(pedidoEdicion));
+  const [formulario, setFormulario] = useState(
+    obtenerInicial(pedidoEdicion, codigoPedido),
+  );
   const [enviando, setEnviando] = useState(false);
   const estaEditando = Boolean(pedidoEdicion);
+  const fechaMinimaPedido = estaEditando
+    ? undefined
+    : obtenerFechaHoraMinimaPedidoInputLocal();
+
+  useEffect(() => {
+    setFormulario(obtenerInicial(pedidoEdicion, codigoPedido));
+  }, [codigoPedido, pedidoEdicion]);
 
   async function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     setEnviando(true);
 
     try {
-      const datos = {
-        id_cliente: formulario.id_cliente,
-        id_empleado: formulario.id_empleado,
-        codigo_orden_pedido: formulario.codigo_orden_pedido,
-        fecha_orden_pedido:
-          convertirFechaHoraInputLocalAUTC(formulario.fecha_orden_pedido),
-        estado_orden_pedido: formulario.estado_orden_pedido,
-        observacion_orden_pedido:
-          formulario.observacion_orden_pedido || undefined,
-        descuento_orden_pedido: formulario.descuento_orden_pedido,
-      };
+      const fechaOriginalFormateada = pedidoEdicion?.fecha_orden_pedido
+        ? formatearFechaHoraInputLocal(pedidoEdicion.fecha_orden_pedido)
+        : '';
+      const fechaCambio =
+        !pedidoEdicion ||
+        formulario.fecha_orden_pedido !== fechaOriginalFormateada;
+
+      if (
+        fechaCambio &&
+        !cumpleAnticipacionMinimaPedido(formulario.fecha_orden_pedido)
+      ) {
+        throw new Error(
+          'La fecha del pedido debe programarse con al menos 24 horas exactas de anticipacion.',
+        );
+      }
 
       if (pedidoEdicion) {
-        await alActualizar(pedidoEdicion.id_orden_pedido, datos);
+        const datosActualizacion: ActualizarPedidoPayload = {
+          id_cliente: formulario.id_cliente,
+          id_empleado: formulario.id_empleado,
+          ...(fechaCambio && {
+            fecha_orden_pedido: convertirFechaHoraInputLocalAUTC(
+              formulario.fecha_orden_pedido,
+            ),
+          }),
+          observacion_orden_pedido:
+            formulario.observacion_orden_pedido || undefined,
+          descuento_orden_pedido: formulario.descuento_orden_pedido,
+        };
+
+        await alActualizar(pedidoEdicion.id_orden_pedido, datosActualizacion);
         alCancelarEdicion();
       } else {
-        await alCrear(datos);
-        setFormulario(obtenerInicial());
+        const datosCreacion: CrearPedidoPayload = {
+          id_cliente: formulario.id_cliente,
+          id_empleado: formulario.id_empleado,
+          fecha_orden_pedido: convertirFechaHoraInputLocalAUTC(
+            formulario.fecha_orden_pedido,
+          ),
+          observacion_orden_pedido:
+            formulario.observacion_orden_pedido || undefined,
+          descuento_orden_pedido: formulario.descuento_orden_pedido,
+        };
+
+        await alCrear(datosCreacion);
+        setFormulario(obtenerInicial(null, codigoPedido));
       }
     } finally {
       setEnviando(false);
@@ -153,29 +192,21 @@ export function FormularioPedido({
       </label>
       <InputTexto
         etiqueta="Codigo del pedido"
-        ayuda="Obligatorio. Maximo 30 caracteres."
+        ayuda="Generado automaticamente por el sistema con el formato PEDIDO-NUMERO."
         name="codigo_orden_pedido"
         value={formulario.codigo_orden_pedido}
-        minLength={2}
-        maxLength={30}
-        placeholder="PED-001"
+        placeholder="PEDIDO-1"
         required
-        onChange={(evento) =>
-          setFormulario((actual) => ({
-            ...actual,
-            codigo_orden_pedido: normalizarTextoPedido(
-              evento.target.value,
-              30,
-            ),
-          }))
-        }
+        readOnly
+        disabled
       />
       <InputTexto
         etiqueta="Fecha del pedido"
-        ayuda="Obligatorio. Se mostrara en horario de Bolivia y se guardara en UTC."
+        ayuda="Obligatorio. Debe programarse con 24 horas exactas de anticipacion minima en horario de Bolivia y se guardara en UTC."
         name="fecha_orden_pedido"
         type="datetime-local"
         value={formulario.fecha_orden_pedido}
+        min={fechaMinimaPedido}
         required
         onChange={(evento) =>
           setFormulario((actual) => ({
@@ -186,22 +217,13 @@ export function FormularioPedido({
       />
       <InputTexto
         etiqueta="Estado del pedido"
-        ayuda="Obligatorio. Maximo 30 caracteres."
+        ayuda="Se crea automaticamente como PENDIENTE. Luego podras cambiarlo a CANCELADO o COMPLETADO desde la tabla."
         name="estado_orden_pedido"
         value={formulario.estado_orden_pedido}
-        minLength={3}
-        maxLength={30}
         placeholder="PENDIENTE"
         required
-        onChange={(evento) =>
-          setFormulario((actual) => ({
-            ...actual,
-            estado_orden_pedido: normalizarTextoPedido(
-              evento.target.value,
-              30,
-            ),
-          }))
-        }
+        readOnly
+        disabled
       />
       <InputTexto
         etiqueta="Descuento"
@@ -245,6 +267,7 @@ export function FormularioPedido({
           type="submit"
           icono={estaEditando ? <Pencil size={18} /> : <Plus size={18} />}
           cargando={enviando}
+          disabled={!formulario.codigo_orden_pedido}
         >
           {estaEditando ? 'Guardar pedido' : 'Crear pedido'}
         </Boton>

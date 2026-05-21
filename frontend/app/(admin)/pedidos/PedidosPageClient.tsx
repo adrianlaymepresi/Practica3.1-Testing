@@ -15,15 +15,16 @@ import { ModalFormulario } from '@/src/components/modales/ModalFormulario';
 import { Paginacion } from '@/src/components/paginacion/Paginacion';
 import { TablaPedidos } from '@/src/components/tablas/TablaPedidos';
 import { useErroresFormulario } from '@/src/hooks/useErroresFormulario';
+import { descargarReciboPedidoPdf } from '@/src/lib/utils/pedido-pdf';
 import { formatearEstadoRegistro } from '@/src/lib/utils/detalle-registro';
 import {
   formatearFechaHoraZonaHoraria,
-  formatearFechaSimpleZonaHoraria,
 } from '@/src/lib/utils/fechas';
 import { obtenerMensajeError } from '@/src/lib/utils/errores';
 import { crearPaginacionVacia } from '@/src/lib/utils/paginacion';
 import {
   formatearMontoPedido,
+  obtenerAccionEstadoPedido,
   obtenerNombreClientePedido,
   obtenerNombreEmpleadoPedido,
 } from '@/src/lib/utils/pedidos';
@@ -32,9 +33,13 @@ import { listarEmpleadosOpciones } from '@/src/services/empleados.service';
 import {
   actualizarPedido,
   archivarPedido,
+  cambiarEstadoPedido,
   crearPedido,
   eliminarPedido,
   listarPedidos,
+  listarDetallesPedido,
+  obtenerPedido,
+  obtenerSiguienteCodigoPedido,
   reactivarPedido,
 } from '@/src/services/pedidos.service';
 import { EstadoRegistro } from '@/src/types/api.types';
@@ -46,7 +51,12 @@ import {
   Pedido,
 } from '@/src/types/pedidos.types';
 
-type AccionConfirmacion = 'archivar' | 'reactivar' | 'eliminar';
+type AccionConfirmacion =
+  | 'archivar'
+  | 'reactivar'
+  | 'eliminar'
+  | 'cancelar'
+  | 'completar';
 
 interface ConfirmacionPendiente {
   accion: AccionConfirmacion;
@@ -60,6 +70,7 @@ export function PedidosPageClient() {
   const [paginacion, setPaginacion] = useState(crearPaginacionVacia());
   const [pedidoEdicion, setPedidoEdicion] = useState<Pedido | null>(null);
   const [pedidoDetalle, setPedidoDetalle] = useState<Pedido | null>(null);
+  const [codigoSiguientePedido, setCodigoSiguientePedido] = useState('');
   const [confirmacion, setConfirmacion] =
     useState<ConfirmacionPendiente | null>(null);
   const [modalFormularioAbierto, setModalFormularioAbierto] = useState(false);
@@ -111,6 +122,11 @@ export function PedidosPageClient() {
 
     setClientes(clientesRespuesta);
     setEmpleados(empleadosRespuesta);
+  }
+
+  async function cargarSiguienteCodigo() {
+    const respuesta = await obtenerSiguienteCodigoPedido();
+    setCodigoSiguientePedido(respuesta.codigo_orden_pedido);
   }
 
   async function manejarCrear(datos: CrearPedidoPayload) {
@@ -167,6 +183,18 @@ export function PedidosPageClient() {
         await eliminarPedido(confirmacion.pedido.id_orden_pedido);
       }
 
+      if (confirmacion.accion === 'cancelar') {
+        await cambiarEstadoPedido(confirmacion.pedido.id_orden_pedido, {
+          estado_orden_pedido: 'CANCELADO',
+        });
+      }
+
+      if (confirmacion.accion === 'completar') {
+        await cambiarEstadoPedido(confirmacion.pedido.id_orden_pedido, {
+          estado_orden_pedido: 'COMPLETADO',
+        });
+      }
+
       setConfirmacion(null);
       await cargarPedidos(paginacion.pagina);
     } catch (errorDesconocido) {
@@ -175,6 +203,31 @@ export function PedidosPageClient() {
       );
     } finally {
       setProcesando(false);
+    }
+  }
+
+  async function manejarDescargaRecibo(pedido: Pedido) {
+    try {
+      const [pedidoActualizado, detallesRespuesta] = await Promise.all([
+        obtenerPedido(pedido.id_orden_pedido),
+        listarDetallesPedido(pedido.id_orden_pedido, {
+          pagina: 1,
+          limite: 500,
+          campoBusqueda: 'nombre_producto',
+        }),
+      ]);
+
+      descargarReciboPedidoPdf(
+        pedidoActualizado,
+        detallesRespuesta.registros,
+      );
+    } catch (errorDesconocido) {
+      setError(
+        obtenerMensajeError(
+          errorDesconocido,
+          'No se pudo generar el recibo del pedido',
+        ),
+      );
     }
   }
 
@@ -233,10 +286,20 @@ export function PedidosPageClient() {
         <>
           <Boton
             icono={<Plus size={17} />}
-            onClick={() => {
-              erroresFormulario.limpiar();
-              setPedidoEdicion(null);
-              setModalFormularioAbierto(true);
+            onClick={async () => {
+              try {
+                erroresFormulario.limpiar();
+                setPedidoEdicion(null);
+                await cargarSiguienteCodigo();
+                setModalFormularioAbierto(true);
+              } catch (errorDesconocido) {
+                setError(
+                  obtenerMensajeError(
+                    errorDesconocido,
+                    'No se pudo preparar el nuevo pedido',
+                  ),
+                );
+              }
             }}
             type="button"
           >
@@ -292,12 +355,28 @@ export function PedidosPageClient() {
             <TablaPedidos
               pedidos={pedidos}
               alVerDetalle={setPedidoDetalle}
+              alDescargarRecibo={(pedido) => void manejarDescargaRecibo(pedido)}
               alEditar={(pedido) => {
                 erroresFormulario.limpiar();
                 setPedidoEdicion(pedido);
                 setModalFormularioAbierto(true);
               }}
-              alCambiarEstado={(pedido) =>
+              alGestionarEstadoPedido={(pedido) => {
+                const accionEstado = obtenerAccionEstadoPedido(pedido);
+
+                if (!accionEstado.habilitado || !accionEstado.estadoDestino) {
+                  return;
+                }
+
+                setConfirmacion({
+                  accion:
+                    accionEstado.estadoDestino === 'CANCELADO'
+                      ? 'cancelar'
+                      : 'completar',
+                  pedido,
+                });
+              }}
+              alCambiarEstadoRegistro={(pedido) =>
                 setConfirmacion({
                   accion: pedido.es_activo_orden_pedido
                     ? 'archivar'
@@ -336,6 +415,7 @@ export function PedidosPageClient() {
         <FormularioPedido
           key={pedidoEdicion?.id_orden_pedido ?? 'nuevo'}
           pedidoEdicion={pedidoEdicion}
+          codigoPedido={pedidoEdicion?.codigo_orden_pedido ?? codigoSiguientePedido}
           clientes={clientes}
           empleados={empleados}
           alCrear={manejarCrear}
@@ -432,6 +512,10 @@ export function PedidosPageClient() {
             ? 'Archivar pedido'
             : confirmacion?.accion === 'reactivar'
               ? 'Reactivar pedido'
+              : confirmacion?.accion === 'cancelar'
+                ? 'Cancelar pedido'
+                : confirmacion?.accion === 'completar'
+                  ? 'Completar pedido'
               : 'Eliminar pedido'
         }
         mensaje={
@@ -439,6 +523,10 @@ export function PedidosPageClient() {
             ? 'Seguro que deseas archivar este pedido? Se conservara la cabecera y sus detalles, pero dejara de aparecer en la vista activa.'
             : confirmacion?.accion === 'reactivar'
               ? 'Seguro que deseas reactivar este pedido? Volvera a estar disponible para seguir gestionando su detalle.'
+              : confirmacion?.accion === 'cancelar'
+                ? 'Seguro que deseas cancelar este pedido? Se mantendra el historial y el stock de todos sus detalles se repondra.'
+                : confirmacion?.accion === 'completar'
+                  ? 'Seguro que deseas marcar este pedido como completado? El pedido quedara cerrado con la informacion actual.'
               : 'Seguro que deseas eliminar este pedido de forma permanente? La operacion se bloqueara si el pedido aun tiene detalles registrados.'
         }
         textoConfirmar={
@@ -446,10 +534,17 @@ export function PedidosPageClient() {
             ? 'Archivar'
             : confirmacion?.accion === 'reactivar'
               ? 'Reactivar'
+              : confirmacion?.accion === 'cancelar'
+                ? 'Cancelar pedido'
+                : confirmacion?.accion === 'completar'
+                  ? 'Completar pedido'
               : 'Eliminar'
         }
         variante={
-          confirmacion?.accion === 'eliminar' ? 'peligro' : 'secundario'
+          confirmacion?.accion === 'eliminar' ||
+          confirmacion?.accion === 'cancelar'
+            ? 'peligro'
+            : 'secundario'
         }
         cargando={procesando}
         alCancelar={() => setConfirmacion(null)}

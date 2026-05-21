@@ -2,13 +2,15 @@ import { ClienteOpcion } from '@/src/types/clientes.types';
 import { EmpleadoOpcion } from '@/src/types/empleados.types';
 import { ProductoOpcion } from '@/src/types/productos.types';
 
+export type EstadoPedidoNegocio = 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO';
+
 export interface Pedido {
   id_orden_pedido: string;
   id_cliente: string;
   id_empleado: string;
   codigo_orden_pedido: string;
   fecha_orden_pedido: string;
-  estado_orden_pedido: string;
+  estado_orden_pedido: EstadoPedidoNegocio;
   observacion_orden_pedido: string | null;
   subtotal_orden_pedido: number;
   descuento_orden_pedido: number;
@@ -33,18 +35,23 @@ export interface DetallePedido {
   producto?: ProductoOpcion | null;
 }
 
+export interface SiguienteCodigoPedido {
+  codigo_orden_pedido: string;
+}
+
 export interface CrearPedidoPayload {
   id_cliente: string;
   id_empleado: string;
-  codigo_orden_pedido: string;
   fecha_orden_pedido: string;
-  estado_orden_pedido: string;
   observacion_orden_pedido?: string;
   descuento_orden_pedido: string;
 }
 
-export interface ActualizarPedidoPayload
-  extends Partial<CrearPedidoPayload> {}
+export interface ActualizarPedidoPayload extends Partial<CrearPedidoPayload> {}
+
+export interface CambiarEstadoPedidoPayload {
+  estado_orden_pedido: Exclude<EstadoPedidoNegocio, 'PENDIENTE'>;
+}
 
 export interface CrearDetallePedidoPayload {
   id_producto: string;

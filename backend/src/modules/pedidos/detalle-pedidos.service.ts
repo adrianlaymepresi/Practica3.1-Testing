@@ -361,6 +361,16 @@ export class DetallePedidosService {
       );
     }
 
+    if (pedido.estado_orden_pedido !== 'PENDIENTE') {
+      throw ApiException.solicitudInvalida(
+        'Solo puedes gestionar detalles mientras el pedido este pendiente',
+        crearErrorCampo(
+          'estado_orden_pedido',
+          'Solo puedes agregar, editar o eliminar detalles en pedidos pendientes',
+        ),
+      );
+    }
+
     return pedido;
   }
 

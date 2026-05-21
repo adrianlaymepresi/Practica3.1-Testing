@@ -73,6 +73,18 @@ export class PedidosRepository extends BaseRepository<
     );
   }
 
+  async contarPedidosRegistrados() {
+    const { count, error } = await this.supabaseService.cliente
+      .from('ordenpedido')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      throw ApiException.desdeSupabase(error);
+    }
+
+    return count ?? 0;
+  }
+
   async obtenerPedidoConRelacionesPorId(idPedido: string) {
     const { data, error } = await this.supabaseService.cliente
       .from('ordenpedido')

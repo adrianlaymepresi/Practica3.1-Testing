@@ -11,6 +11,7 @@ import {
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
 import { ActualizarDetallePedidoDto } from './dto/actualizar-detalle-pedido.dto';
 import { ActualizarPedidoDto } from './dto/actualizar-pedido.dto';
+import { CambiarEstadoPedidoDto } from './dto/cambiar-estado-pedido.dto';
 import { CrearDetallePedidoDto } from './dto/crear-detalle-pedido.dto';
 import { CrearPedidoDto } from './dto/crear-pedido.dto';
 import { DetallePedidosService } from './detalle-pedidos.service';
@@ -26,6 +27,11 @@ export class PedidosController {
   @Get()
   listar(@Query() paginacion: PaginacionQueryDto) {
     return this.pedidosService.listar(paginacion);
+  }
+
+  @Get('siguiente-codigo')
+  obtenerSiguienteCodigo() {
+    return this.pedidosService.obtenerSiguienteCodigo();
   }
 
   @Get(':id/detalles')
@@ -60,6 +66,17 @@ export class PedidosController {
     @Body() actualizarPedidoDto: ActualizarPedidoDto,
   ) {
     return this.pedidosService.actualizar(idPedido, actualizarPedidoDto);
+  }
+
+  @Patch(':id/estado')
+  cambiarEstadoPedido(
+    @Param('id') idPedido: string,
+    @Body() cambiarEstadoPedidoDto: CambiarEstadoPedidoDto,
+  ) {
+    return this.pedidosService.cambiarEstadoPedido(
+      idPedido,
+      cambiarEstadoPedidoDto.estado_orden_pedido,
+    );
   }
 
   @Patch(':id/detalles/:idDetalle')

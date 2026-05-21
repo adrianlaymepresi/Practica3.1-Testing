@@ -5,11 +5,13 @@ import {
 } from '@/src/types/api.types';
 import {
   ActualizarDetallePedidoPayload,
+  CambiarEstadoPedidoPayload,
   ActualizarPedidoPayload,
   CrearDetallePedidoPayload,
   CrearPedidoPayload,
   DetallePedido,
   Pedido,
+  SiguienteCodigoPedido,
 } from '@/src/types/pedidos.types';
 
 export function listarPedidos(parametros: ParametrosPaginacion) {
@@ -20,6 +22,10 @@ export function listarPedidos(parametros: ParametrosPaginacion) {
 
 export function obtenerPedido(idPedido: string) {
   return solicitarApi<Pedido>(`/pedidos/${idPedido}`);
+}
+
+export function obtenerSiguienteCodigoPedido() {
+  return solicitarApi<SiguienteCodigoPedido>('/pedidos/siguiente-codigo');
 }
 
 export function crearPedido(datos: CrearPedidoPayload) {
@@ -34,6 +40,19 @@ export function actualizarPedido(idPedido: string, datos: ActualizarPedidoPayloa
     metodo: 'PATCH',
     cuerpo: datos,
   });
+}
+
+export function cambiarEstadoPedido(
+  idPedido: string,
+  datos: CambiarEstadoPedidoPayload,
+) {
+  return solicitarApi<Pedido, CambiarEstadoPedidoPayload>(
+    `/pedidos/${idPedido}/estado`,
+    {
+      metodo: 'PATCH',
+      cuerpo: datos,
+    },
+  );
 }
 
 export function archivarPedido(idPedido: string) {

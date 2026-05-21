@@ -8,10 +8,21 @@ import {
   normalizarTextoEspacios,
 } from '../../common/utils/textos.util';
 import { crearErrorCampo } from '../../common/utils/validacion.util';
+import { DetallePedidosRepository } from './detalle-pedidos.repository';
 import { ActualizarPedidoDto } from './dto/actualizar-pedido.dto';
 import { CrearPedidoDto } from './dto/crear-pedido.dto';
 import { PedidosCatalogosRepository } from './pedidos-catalogos.repository';
 import { PedidosRepository } from './pedidos.repository';
+
+const ESTADO_PEDIDO_PENDIENTE = 'PENDIENTE';
+const ESTADO_PEDIDO_COMPLETADO = 'COMPLETADO';
+const ESTADO_PEDIDO_CANCELADO = 'CANCELADO';
+const ESTADOS_PEDIDO_VALIDOS = [
+  ESTADO_PEDIDO_PENDIENTE,
+  ESTADO_PEDIDO_COMPLETADO,
+  ESTADO_PEDIDO_CANCELADO,
+] as const;
+const MILISEGUNDOS_ANTICIPACION_PEDIDO = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class PedidosService {
@@ -19,6 +30,7 @@ export class PedidosService {
     private readonly pedidosRepository: PedidosRepository,
     private readonly pedidosCatalogosRepository: PedidosCatalogosRepository,
     private readonly referenciasRepository: ReferenciasRepository,
+    private readonly detallePedidosRepository: DetallePedidosRepository,
   ) {}
 
   listar(paginacion: PaginacionQueryDto) {
@@ -29,18 +41,18 @@ export class PedidosService {
     return this.pedidosRepository.obtenerPedidoConRelacionesPorId(idPedido);
   }
 
+  async obtenerSiguienteCodigo() {
+    return {
+      codigo_orden_pedido: await this.generarCodigoPedido(),
+    };
+  }
+
   async crear(crearPedidoDto: CrearPedidoDto) {
-    const codigoPedido = normalizarTextoCatalogo(
-      crearPedidoDto.codigo_orden_pedido,
-    );
-    const estadoPedido = normalizarTextoCatalogo(
-      crearPedidoDto.estado_orden_pedido ?? 'PENDIENTE',
-    );
     const descuentoPedido = this.redondearMonto(
       crearPedidoDto.descuento_orden_pedido ?? 0,
     );
+    const codigoPedido = await this.generarCodigoPedido();
 
-    await this.validarCodigoDisponible(codigoPedido);
     await this.validarClienteActivo(crearPedidoDto.id_cliente);
     await this.validarEmpleadoActivo(crearPedidoDto.id_empleado);
     this.validarDescuentoPedido(descuentoPedido, 0);
@@ -52,7 +64,7 @@ export class PedidosService {
       fecha_orden_pedido: this.normalizarFechaPedido(
         crearPedidoDto.fecha_orden_pedido,
       ),
-      estado_orden_pedido: estadoPedido,
+      estado_orden_pedido: ESTADO_PEDIDO_PENDIENTE,
       observacion_orden_pedido: crearPedidoDto.observacion_orden_pedido
         ? normalizarTextoEspacios(crearPedidoDto.observacion_orden_pedido)
         : null,
@@ -72,6 +84,8 @@ export class PedidosService {
 
   async actualizar(idPedido: string, actualizarPedidoDto: ActualizarPedidoDto) {
     const pedidoActual = await this.pedidosRepository.obtenerPorId(idPedido);
+    this.validarPedidoEditable(pedidoActual);
+
     const subtotalActual = this.redondearMonto(
       Number(pedidoActual.subtotal_orden_pedido),
     );
@@ -79,13 +93,6 @@ export class PedidosService {
       actualizarPedidoDto.descuento_orden_pedido !== undefined
         ? this.redondearMonto(actualizarPedidoDto.descuento_orden_pedido)
         : this.redondearMonto(Number(pedidoActual.descuento_orden_pedido));
-
-    if (actualizarPedidoDto.codigo_orden_pedido) {
-      await this.validarCodigoDisponible(
-        normalizarTextoCatalogo(actualizarPedidoDto.codigo_orden_pedido),
-        idPedido,
-      );
-    }
 
     if (actualizarPedidoDto.id_cliente) {
       await this.validarClienteActivo(actualizarPedidoDto.id_cliente);
@@ -104,19 +111,9 @@ export class PedidosService {
       ...(actualizarPedidoDto.id_empleado && {
         id_empleado: actualizarPedidoDto.id_empleado,
       }),
-      ...(actualizarPedidoDto.codigo_orden_pedido && {
-        codigo_orden_pedido: normalizarTextoCatalogo(
-          actualizarPedidoDto.codigo_orden_pedido,
-        ),
-      }),
       ...(actualizarPedidoDto.fecha_orden_pedido && {
         fecha_orden_pedido: this.normalizarFechaPedido(
           actualizarPedidoDto.fecha_orden_pedido,
-        ),
-      }),
-      ...(actualizarPedidoDto.estado_orden_pedido && {
-        estado_orden_pedido: normalizarTextoCatalogo(
-          actualizarPedidoDto.estado_orden_pedido,
         ),
       }),
       ...(actualizarPedidoDto.observacion_orden_pedido !== undefined && {
@@ -136,6 +133,48 @@ export class PedidosService {
 
     return {
       mensaje: MENSAJES.PEDIDO_ACTUALIZADO,
+      datos: await this.pedidosRepository.obtenerPedidoConRelacionesPorId(
+        idPedido,
+      ),
+    };
+  }
+
+  async cambiarEstadoPedido(idPedido: string, estadoDestinoRecibido: string) {
+    const pedidoActual = await this.pedidosRepository.obtenerPorId(idPedido);
+    this.validarPedidoActivo(pedidoActual);
+    this.validarPedidoPendiente(pedidoActual);
+
+    const estadoDestino = normalizarTextoCatalogo(estadoDestinoRecibido);
+
+    if (
+      estadoDestino !== ESTADO_PEDIDO_COMPLETADO &&
+      estadoDestino !== ESTADO_PEDIDO_CANCELADO
+    ) {
+      throw ApiException.solicitudInvalida(
+        'El estado solicitado para el pedido no es valido',
+        crearErrorCampo(
+          'estado_orden_pedido',
+          'Solo puedes cambiar el pedido a COMPLETADO o CANCELADO',
+        ),
+      );
+    }
+
+    if (estadoDestino === ESTADO_PEDIDO_CANCELADO) {
+      this.validarPedidoAntesDeFecha(pedidoActual.fecha_orden_pedido);
+      await this.restaurarStockPorCancelacion(idPedido);
+    }
+
+    if (estadoDestino === ESTADO_PEDIDO_COMPLETADO) {
+      this.validarPedidoDespuesDeFecha(pedidoActual.fecha_orden_pedido);
+    }
+
+    await this.pedidosRepository.actualizar(idPedido, {
+      estado_orden_pedido: estadoDestino,
+      updated_at: new Date().toISOString(),
+    });
+
+    return {
+      mensaje: MENSAJES.PEDIDO_ESTADO_ACTUALIZADO,
       datos: await this.pedidosRepository.obtenerPedidoConRelacionesPorId(
         idPedido,
       ),
@@ -199,23 +238,59 @@ export class PedidosService {
     };
   }
 
-  private async validarCodigoDisponible(
-    codigoPedido: string,
-    idPedidoActual?: string,
-  ) {
-    const existeCodigo = await this.pedidosRepository.existeCodigoPedido(
-      codigoPedido,
-      idPedidoActual,
+  private async generarCodigoPedido() {
+    const totalPedidos = await this.pedidosRepository.contarPedidosRegistrados();
+    let numeroPedido = totalPedidos + 1;
+    let codigoPedido = `PEDIDO-${numeroPedido}`;
+
+    while (await this.pedidosRepository.existeCodigoPedido(codigoPedido)) {
+      numeroPedido += 1;
+      codigoPedido = `PEDIDO-${numeroPedido}`;
+    }
+
+    return codigoPedido;
+  }
+
+  private async restaurarStockPorCancelacion(idPedido: string) {
+    const detalles = await this.detallePedidosRepository.listarTodosPorPedido(
+      idPedido,
     );
 
-    if (existeCodigo) {
-      throw ApiException.conflicto(
-        'Ya existe un pedido con ese codigo',
-        crearErrorCampo(
-          'codigo_orden_pedido',
-          'Ya existe un pedido con ese codigo',
-        ),
-      );
+    if (detalles.length === 0) {
+      return;
+    }
+
+    const restauraciones: Array<{ idProducto: string; stockOriginal: number }> =
+      [];
+
+    try {
+      for (const detalle of detalles) {
+        const producto = await this.obtenerProductoPorIdValidado(
+          detalle.id_producto,
+        );
+        const stockOriginal = Number(producto.stock_producto);
+
+        await this.pedidosCatalogosRepository.actualizarStockProducto(
+          producto.id_producto,
+          stockOriginal + detalle.cantidad_detalle_orden,
+        );
+
+        restauraciones.push({
+          idProducto: producto.id_producto,
+          stockOriginal,
+        });
+      }
+    } catch (error) {
+      for (const restauracion of restauraciones.reverse()) {
+        try {
+          await this.pedidosCatalogosRepository.actualizarStockProducto(
+            restauracion.idProducto,
+            restauracion.stockOriginal,
+          );
+        } catch {}
+      }
+
+      throw error;
     }
   }
 
@@ -251,11 +326,25 @@ export class PedidosService {
     }
   }
 
-  private normalizarFechaPedido(fechaPedido?: string | null) {
-    if (!fechaPedido) {
-      return new Date().toISOString();
+  private async obtenerProductoPorIdValidado(idProducto: string) {
+    const producto = await this.pedidosCatalogosRepository.buscarProductoPorId(
+      idProducto,
+    );
+
+    if (!producto) {
+      throw ApiException.solicitudInvalida(
+        'No se encontro el producto vinculado al pedido',
+        crearErrorCampo(
+          'id_producto',
+          'No se encontro el producto vinculado al pedido',
+        ),
+      );
     }
 
+    return producto;
+  }
+
+  private normalizarFechaPedido(fechaPedido: string) {
     const fechaNormalizada = new Date(fechaPedido);
 
     if (Number.isNaN(fechaNormalizada.getTime())) {
@@ -268,7 +357,99 @@ export class PedidosService {
       );
     }
 
+    const diferenciaMilisegundos =
+      fechaNormalizada.getTime() - Date.now();
+
+    if (diferenciaMilisegundos < MILISEGUNDOS_ANTICIPACION_PEDIDO) {
+      throw ApiException.solicitudInvalida(
+        'La fecha del pedido debe tener al menos 24 horas exactas de anticipacion',
+        crearErrorCampo(
+          'fecha_orden_pedido',
+          'La fecha del pedido debe programarse con al menos 24 horas exactas de anticipacion',
+        ),
+      );
+    }
+
     return fechaNormalizada.toISOString();
+  }
+
+  private validarPedidoActivo(pedido: {
+    es_activo_orden_pedido: boolean;
+    deleted_at: string | null;
+  }) {
+    if (!pedido.es_activo_orden_pedido || pedido.deleted_at) {
+      throw ApiException.solicitudInvalida(
+        'No puedes gestionar un pedido archivado',
+        crearErrorCampo(
+          'id_orden_pedido',
+          'Reactiva el pedido antes de continuar con esta operacion',
+        ),
+      );
+    }
+  }
+
+  private validarPedidoPendiente(pedido: { estado_orden_pedido: string }) {
+    const estadoActual = normalizarTextoCatalogo(pedido.estado_orden_pedido);
+    const estadoEsValido = ESTADOS_PEDIDO_VALIDOS.some(
+      (estado) => estado === estadoActual,
+    );
+
+    if (!estadoEsValido) {
+      throw ApiException.solicitudInvalida(
+        'El estado actual del pedido no es valido',
+        crearErrorCampo(
+          'estado_orden_pedido',
+          'El pedido tiene un estado no reconocido por el sistema',
+        ),
+      );
+    }
+
+    if (estadoActual !== ESTADO_PEDIDO_PENDIENTE) {
+      throw ApiException.solicitudInvalida(
+        'Solo puedes cambiar pedidos que aun estan pendientes',
+        crearErrorCampo(
+          'estado_orden_pedido',
+          'Solo puedes gestionar pedidos que aun estan en estado PENDIENTE',
+        ),
+      );
+    }
+  }
+
+  private validarPedidoEditable(pedido: {
+    es_activo_orden_pedido: boolean;
+    deleted_at: string | null;
+    estado_orden_pedido: string;
+  }) {
+    this.validarPedidoActivo(pedido);
+    this.validarPedidoPendiente(pedido);
+  }
+
+  private validarPedidoAntesDeFecha(fechaPedido: string) {
+    const fechaObjetivo = new Date(fechaPedido);
+
+    if (Date.now() >= fechaObjetivo.getTime()) {
+      throw ApiException.solicitudInvalida(
+        'Solo puedes cancelar pedidos antes de la fecha programada',
+        crearErrorCampo(
+          'estado_orden_pedido',
+          'El pedido ya alcanzo su fecha programada y ya no puede cancelarse',
+        ),
+      );
+    }
+  }
+
+  private validarPedidoDespuesDeFecha(fechaPedido: string) {
+    const fechaObjetivo = new Date(fechaPedido);
+
+    if (Date.now() < fechaObjetivo.getTime()) {
+      throw ApiException.solicitudInvalida(
+        'Solo puedes completar pedidos cuando su fecha programada ya se cumplio',
+        crearErrorCampo(
+          'estado_orden_pedido',
+          'El pedido solo puede marcarse como COMPLETADO despues de llegar a la fecha y hora programadas',
+        ),
+      );
+    }
   }
 
   private redondearMonto(valor: number) {

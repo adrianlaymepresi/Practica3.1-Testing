@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Plus, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, FileDown, Plus, RefreshCcw } from 'lucide-react';
 import { BarraBusqueda } from '@/src/components/comunes/BarraBusqueda';
 import { Boton } from '@/src/components/comunes/Boton';
 import { MensajeError } from '@/src/components/comunes/MensajeError';
@@ -21,7 +21,9 @@ import { formatearEstadoRegistro } from '@/src/lib/utils/detalle-registro';
 import { formatearFechaHoraZonaHoraria } from '@/src/lib/utils/fechas';
 import { obtenerMensajeError } from '@/src/lib/utils/errores';
 import { crearPaginacionVacia } from '@/src/lib/utils/paginacion';
+import { descargarReciboPedidoPdf } from '@/src/lib/utils/pedido-pdf';
 import {
+  esPedidoPendiente,
   formatearMontoPedido,
   obtenerNombreClientePedido,
   obtenerNombreEmpleadoPedido,
@@ -62,7 +64,7 @@ export function PedidoDetallePageClient() {
   const [campoBusqueda, setCampoBusqueda] = useState('nombre_producto');
   const erroresFormulario = useErroresFormulario();
 
-  const permiteEdicion = Boolean(pedido?.es_activo_orden_pedido);
+  const permiteEdicion = esPedidoPendiente(pedido);
 
   const resumenTarjetas = useMemo(
     () =>
@@ -201,6 +203,29 @@ export function PedidoDetallePageClient() {
     }
   }
 
+  async function manejarDescargaRecibo() {
+    if (!pedido) {
+      return;
+    }
+
+    try {
+      const detallesReporte = await listarDetallesPedido(idPedido, {
+        pagina: 1,
+        limite: 500,
+        campoBusqueda: 'nombre_producto',
+      });
+
+      descargarReciboPedidoPdf(pedido, detallesReporte.registros);
+    } catch (errorDesconocido) {
+      setError(
+        obtenerMensajeError(
+          errorDesconocido,
+          'No se pudo generar el recibo del pedido',
+        ),
+      );
+    }
+  }
+
   useEffect(() => {
     let estaMontado = true;
 
@@ -268,6 +293,15 @@ export function PedidoDetallePageClient() {
             type="button"
           >
             Actualizar
+          </Boton>
+          <Boton
+            variante="fantasma"
+            icono={<FileDown size={17} />}
+            onClick={() => void manejarDescargaRecibo()}
+            type="button"
+            disabled={!pedido}
+          >
+            Descargar recibo
           </Boton>
           <Boton
             icono={<Plus size={17} />}
@@ -349,7 +383,7 @@ export function PedidoDetallePageClient() {
       <ModalFormulario
         abierto={modalFormularioAbierto}
         titulo={detalleEdicion ? 'Editar detalle' : 'Nuevo detalle'}
-        descripcion="Selecciona un producto y define la cantidad. El backend recalcula precio, subtotal, stock y total del pedido."
+        descripcion="Selecciona un producto, ajusta la cantidad con el control de stock y deja que el backend recalcule importes y existencias."
         alCerrar={() => {
           erroresFormulario.limpiar();
           setDetalleEdicion(null);

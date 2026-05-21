@@ -3,11 +3,14 @@
 import Link from 'next/link';
 import {
   Archive,
+  Check,
   Eye,
+  FileDown,
   ListOrdered,
   Pencil,
   RotateCcw,
   Trash2,
+  X,
 } from 'lucide-react';
 import { Boton } from '@/src/components/comunes/Boton';
 import {
@@ -16,6 +19,8 @@ import {
 } from '@/src/lib/utils/fechas';
 import {
   formatearMontoPedido,
+  esPedidoPendiente,
+  obtenerAccionEstadoPedido,
   obtenerNombreClientePedido,
   obtenerNombreEmpleadoPedido,
 } from '@/src/lib/utils/pedidos';
@@ -25,7 +30,9 @@ interface TablaPedidosProps {
   pedidos: Pedido[];
   alVerDetalle: (pedido: Pedido) => void;
   alEditar: (pedido: Pedido) => void;
-  alCambiarEstado: (pedido: Pedido) => void;
+  alGestionarEstadoPedido: (pedido: Pedido) => void;
+  alDescargarRecibo: (pedido: Pedido) => void;
+  alCambiarEstadoRegistro: (pedido: Pedido) => void;
   alEliminar: (pedido: Pedido) => void;
 }
 
@@ -33,7 +40,9 @@ export function TablaPedidos({
   pedidos,
   alVerDetalle,
   alEditar,
-  alCambiarEstado,
+  alGestionarEstadoPedido,
+  alDescargarRecibo,
+  alCambiarEstadoRegistro,
   alEliminar,
 }: TablaPedidosProps) {
   if (pedidos.length === 0) {
@@ -63,12 +72,18 @@ export function TablaPedidos({
             <th>Info</th>
             <th>Editar</th>
             <th>Detalle</th>
-            <th>Estado</th>
+            <th>Pedido</th>
+            <th>Recibo</th>
+            <th>Registro</th>
             <th>Eliminar</th>
           </tr>
         </thead>
         <tbody>
-          {pedidos.map((pedido) => (
+          {pedidos.map((pedido) => {
+            const accionEstado = obtenerAccionEstadoPedido(pedido);
+            const puedeEditar = esPedidoPendiente(pedido);
+
+            return (
             <tr key={pedido.id_orden_pedido}>
               <td>
                 <strong>{pedido.codigo_orden_pedido}</strong>
@@ -77,7 +92,9 @@ export function TablaPedidos({
               <td>{obtenerNombreClientePedido(pedido.cliente)}</td>
               <td>{obtenerNombreEmpleadoPedido(pedido.empleado)}</td>
               <td>
-                <span className="pedido-estado-negocio">
+                <span
+                  className={`pedido-estado-negocio pedido-estado-negocio--${pedido.estado_orden_pedido.toLowerCase()}`}
+                >
                   {pedido.estado_orden_pedido}
                 </span>
               </td>
@@ -114,6 +131,7 @@ export function TablaPedidos({
                   icono={<Pencil size={16} />}
                   onClick={() => alEditar(pedido)}
                   type="button"
+                  disabled={!puedeEditar}
                 >
                   Editar
                 </Boton>
@@ -129,6 +147,37 @@ export function TablaPedidos({
               </td>
               <td>
                 <Boton
+                  icono={
+                    accionEstado.estadoDestino === 'COMPLETADO' ? (
+                      <Check size={16} />
+                    ) : (
+                      <X size={16} />
+                    )
+                  }
+                  variante={
+                    accionEstado.estadoDestino === 'CANCELADO'
+                      ? 'peligro'
+                      : 'secundario'
+                  }
+                  onClick={() => alGestionarEstadoPedido(pedido)}
+                  type="button"
+                  disabled={!accionEstado.habilitado}
+                >
+                  {accionEstado.etiqueta}
+                </Boton>
+              </td>
+              <td>
+                <Boton
+                  variante="fantasma"
+                  icono={<FileDown size={16} />}
+                  onClick={() => alDescargarRecibo(pedido)}
+                  type="button"
+                >
+                  PDF
+                </Boton>
+              </td>
+              <td>
+                <Boton
                   variante={
                     pedido.es_activo_orden_pedido ? 'fantasma' : 'secundario'
                   }
@@ -139,7 +188,7 @@ export function TablaPedidos({
                       <RotateCcw size={16} />
                     )
                   }
-                  onClick={() => alCambiarEstado(pedido)}
+                  onClick={() => alCambiarEstadoRegistro(pedido)}
                   type="button"
                 >
                   {pedido.es_activo_orden_pedido ? 'Archivar' : 'Reactivar'}
@@ -156,7 +205,8 @@ export function TablaPedidos({
                 </Boton>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

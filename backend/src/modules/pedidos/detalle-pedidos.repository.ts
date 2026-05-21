@@ -92,6 +92,24 @@ export class DetallePedidosRepository extends BaseRepository<
     return (data ?? []).length > 0;
   }
 
+  async listarTodosPorPedido(idPedido: string) {
+    const { data, error } = await this.supabaseService.cliente
+      .from('detalleorden')
+      .select(
+        'id_detalle_orden, id_orden_pedido, id_producto, cantidad_detalle_orden, precio_unitario_detalle_orden, subtotal_detalle_orden, created_at, updated_at, producto(id_producto, codigo_producto, nombre_producto, precio_producto, stock_producto, url_imagen_producto, es_activo_producto)',
+      )
+      .eq('id_orden_pedido', idPedido)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      throw ApiException.desdeSupabase(error);
+    }
+
+    return ((data ?? []) as DetallePedidoRegistroCrudo[]).map((detalle) =>
+      this.normalizarDetalle(detalle),
+    );
+  }
+
   private coincideBusqueda(
     detalle: DetallePedidoRegistro,
     campoBusqueda: string,
