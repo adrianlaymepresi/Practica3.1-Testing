@@ -39,9 +39,13 @@ export interface SiguienteCodigoPedido {
   codigo_orden_pedido: string;
 }
 
+export interface ReciboPedidoDatos {
+  pedido: Pedido;
+  detalles: DetallePedido[];
+}
+
 export interface CrearPedidoPayload {
   id_cliente: string;
-  id_empleado: string;
   fecha_orden_pedido: string;
   observacion_orden_pedido?: string;
   descuento_orden_pedido: string;

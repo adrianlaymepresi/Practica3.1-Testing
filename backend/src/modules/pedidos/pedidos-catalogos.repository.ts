@@ -42,6 +42,29 @@ export class PedidosCatalogosRepository {
     return data as Empleado | null;
   }
 
+  async buscarEmpleadoActivoPorUsuarioId(idUsuario: string) {
+    const { data, error } = await this.supabaseService.cliente
+      .from('usuario')
+      .select('id_empleado')
+      .eq('id_usuario', idUsuario)
+      .eq('es_activo_usuario', true)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (error) {
+      throw ApiException.desdeSupabase(error);
+    }
+
+    const idEmpleado = (data as { id_empleado?: string | null } | null)
+      ?.id_empleado;
+
+    if (!idEmpleado) {
+      return null;
+    }
+
+    return this.buscarEmpleadoActivoPorId(idEmpleado);
+  }
+
   async buscarProductoActivoPorId(idProducto: string) {
     const { data, error } = await this.supabaseService.cliente
       .from('producto')

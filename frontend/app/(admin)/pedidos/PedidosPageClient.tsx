@@ -23,7 +23,7 @@ import { formatearEstadoRegistro } from '@/src/lib/utils/detalle-registro';
 import {
   formatearFechaHoraZonaHoraria,
 } from '@/src/lib/utils/fechas';
-import { obtenerMensajeError } from '@/src/lib/utils/errores';
+import { obtenerErroresCampo, obtenerMensajeError } from '@/src/lib/utils/errores';
 import { crearPaginacionVacia } from '@/src/lib/utils/paginacion';
 import {
   formatearMontoPedido,
@@ -32,7 +32,6 @@ import {
   obtenerNombreEmpleadoPedido,
 } from '@/src/lib/utils/pedidos';
 import { listarClientesOpciones } from '@/src/services/clientes.service';
-import { listarEmpleadosOpciones } from '@/src/services/empleados.service';
 import {
   actualizarPedido,
   archivarPedido,
@@ -40,14 +39,14 @@ import {
   crearPedido,
   eliminarPedido,
   listarPedidos,
-  listarDetallesPedido,
+  obtenerDatosReciboPedido,
   obtenerPedido,
   obtenerSiguienteCodigoPedido,
   reactivarPedido,
 } from '@/src/services/pedidos.service';
 import { EstadoRegistro } from '@/src/types/api.types';
+import { SesionActiva } from '@/src/types/auth.types';
 import { ClienteOpcion } from '@/src/types/clientes.types';
-import { EmpleadoOpcion } from '@/src/types/empleados.types';
 import {
   ActualizarPedidoPayload,
   CrearPedidoPayload,
@@ -67,10 +66,13 @@ interface ConfirmacionPendiente {
   pedido: Pedido;
 }
 
-export function PedidosPageClient() {
+interface PedidosPageClientProps {
+  sesion: SesionActiva;
+}
+
+export function PedidosPageClient({ sesion }: PedidosPageClientProps) {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [clientes, setClientes] = useState<ClienteOpcion[]>([]);
-  const [empleados, setEmpleados] = useState<EmpleadoOpcion[]>([]);
   const [paginacion, setPaginacion] = useState(crearPaginacionVacia());
   const [pedidoEdicion, setPedidoEdicion] = useState<Pedido | null>(null);
   const [pedidoDetalle, setPedidoDetalle] = useState<Pedido | null>(null);
@@ -123,13 +125,8 @@ export function PedidosPageClient() {
   }
 
   async function cargarCatalogos() {
-    const [clientesRespuesta, empleadosRespuesta] = await Promise.all([
-      listarClientesOpciones(),
-      listarEmpleadosOpciones(),
-    ]);
-
+    const clientesRespuesta = await listarClientesOpciones();
     setClientes(clientesRespuesta);
-    setEmpleados(empleadosRespuesta);
   }
 
   async function cargarSiguienteCodigo() {
@@ -216,18 +213,13 @@ export function PedidosPageClient() {
 
   async function manejarDescargaRecibo(pedido: Pedido) {
     try {
-      const [pedidoActualizado, detallesRespuesta] = await Promise.all([
-        obtenerPedido(pedido.id_orden_pedido),
-        listarDetallesPedido(pedido.id_orden_pedido, {
-          pagina: 1,
-          limite: 500,
-          campoBusqueda: 'nombre_producto',
-        }),
-      ]);
+      setError(null);
+      setAlertaRecibo(null);
+      const datosRecibo = await obtenerDatosReciboPedido(pedido.id_orden_pedido);
 
       const erroresRecibo = validarReciboPedido(
-        pedidoActualizado,
-        detallesRespuesta.registros,
+        datosRecibo.pedido,
+        datosRecibo.detalles,
       );
 
       if (erroresRecibo.length > 0) {
@@ -239,17 +231,27 @@ export function PedidosPageClient() {
         return;
       }
 
-      descargarReciboPedidoPdf(
-        pedidoActualizado,
-        detallesRespuesta.registros,
-      );
+      descargarReciboPedidoPdf(datosRecibo.pedido, datosRecibo.detalles);
     } catch (errorDesconocido) {
-      setError(
-        obtenerMensajeError(
+      const erroresRecibo = obtenerErroresCampo(errorDesconocido);
+
+      setAlertaRecibo({
+        mensaje: obtenerMensajeError(
           errorDesconocido,
           'No se pudo generar el recibo del pedido',
         ),
-      );
+        errores:
+          erroresRecibo.length > 0
+            ? erroresRecibo
+            : [
+                {
+                  campo: 'recibo',
+                  mensajes: [
+                    'Verifica que el pedido tenga cliente, empleado, fecha valida, total mayor a cero y al menos un detalle registrado',
+                  ],
+                },
+              ],
+      });
     }
   }
 
@@ -258,7 +260,7 @@ export function PedidosPageClient() {
 
     async function cargarInicial() {
       try {
-        const [pedidosRespuesta, clientesRespuesta, empleadosRespuesta] =
+        const [pedidosRespuesta, clientesRespuesta] =
           await Promise.all([
             listarPedidos({
               pagina: 1,
@@ -267,14 +269,12 @@ export function PedidosPageClient() {
               estadoRegistro: 'activos',
             }),
             listarClientesOpciones(),
-            listarEmpleadosOpciones(),
           ]);
 
         if (estaMontado) {
           setPedidos(pedidosRespuesta.registros);
           setPaginacion(pedidosRespuesta.paginacion);
           setClientes(clientesRespuesta);
-          setEmpleados(empleadosRespuesta);
           setError(null);
         }
       } catch (errorDesconocido) {
@@ -436,10 +436,10 @@ export function PedidosPageClient() {
       >
         <FormularioPedido
           key={pedidoEdicion?.id_orden_pedido ?? 'nuevo'}
+          sesion={sesion}
           pedidoEdicion={pedidoEdicion}
           codigoPedido={pedidoEdicion?.codigo_orden_pedido ?? codigoSiguientePedido}
           clientes={clientes}
-          empleados={empleados}
           alCrear={manejarCrear}
           alActualizar={manejarActualizar}
           alCancelarEdicion={() => {

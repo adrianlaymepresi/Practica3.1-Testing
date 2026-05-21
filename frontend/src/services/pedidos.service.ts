@@ -11,6 +11,7 @@ import {
   CrearPedidoPayload,
   DetallePedido,
   Pedido,
+  ReciboPedidoDatos,
   SiguienteCodigoPedido,
 } from '@/src/types/pedidos.types';
 import { ProductoOpcion } from '@/src/types/productos.types';
@@ -37,6 +38,10 @@ export function listarProductosDisponiblesPedido(
 
 export function obtenerPedido(idPedido: string) {
   return solicitarApi<Pedido>(`/pedidos/${idPedido}`);
+}
+
+export function obtenerDatosReciboPedido(idPedido: string) {
+  return solicitarApi<ReciboPedidoDatos>(`/pedidos/${idPedido}/recibo`);
 }
 
 export function obtenerSiguienteCodigoPedido() {

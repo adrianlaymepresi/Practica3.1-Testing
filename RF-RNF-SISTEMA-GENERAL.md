@@ -112,45 +112,51 @@ RF-39. El sistema debe generar automaticamente el codigo del pedido con el forma
 
 RF-40. El sistema debe crear todo pedido con estado inicial `PENDIENTE`.
 
-RF-41. El sistema debe permitir programar la fecha del pedido con una anticipacion minima exacta de 24 horas respecto al momento actual.
+RF-41. El sistema debe asignar automaticamente como empleado del pedido al usuario autenticado que registra o actualiza la cabecera.
 
-RF-42. El sistema debe permitir editar la cabecera del pedido mientras el pedido siga pendiente y activo.
+RF-42. El sistema debe permitir programar la fecha del pedido con una anticipacion minima exacta de 24 horas respecto al momento actual.
 
-RF-43. El sistema debe permitir cambiar el estado del pedido a `CANCELADO` solo antes de la fecha y hora programadas.
+RF-43. El sistema debe permitir editar la cabecera del pedido mientras el pedido siga pendiente y activo.
 
-RF-44. El sistema debe permitir cambiar el estado del pedido a `COMPLETADO` solo despues de la fecha y hora programadas.
+RF-44. El sistema debe aplicar la misma regla operativa de validacion de fecha al crear y al cambiar la fecha de un pedido existente.
 
-RF-45. El sistema debe impedir la gestion de detalles cuando el pedido ya no este pendiente o este archivado.
+RF-45. El sistema debe permitir cambiar el estado del pedido a `CANCELADO` solo antes de la fecha y hora programadas.
 
-RF-46. El sistema debe permitir archivar, reactivar y eliminar pedidos, bloqueando la eliminacion fisica si todavia existen detalles relacionados.
+RF-46. El sistema debe permitir cambiar el estado del pedido a `COMPLETADO` solo despues de la fecha y hora programadas.
+
+RF-47. El sistema debe impedir la gestion de detalles cuando el pedido ya no este pendiente o este archivado.
+
+RF-48. El sistema debe permitir archivar, reactivar y eliminar pedidos, bloqueando la eliminacion fisica si todavia existen detalles relacionados.
 
 ### 9. Detalle de pedido
 
-RF-47. El sistema debe permitir registrar detalles de pedido asociados a un producto valido.
+RF-49. El sistema debe permitir registrar detalles de pedido asociados a un producto valido.
 
-RF-48. El sistema debe impedir repetir el mismo producto dentro de un mismo pedido.
+RF-50. El sistema debe impedir repetir el mismo producto dentro de un mismo pedido.
 
-RF-49. El sistema debe recalcular en backend el precio unitario, subtotal del detalle, subtotal del pedido y total del pedido usando el precio real del producto.
+RF-51. El sistema debe recalcular en backend el precio unitario, subtotal del detalle, subtotal del pedido y total del pedido usando el precio real del producto.
 
-RF-50. El sistema debe validar stock suficiente antes de crear o actualizar un detalle.
+RF-52. El sistema debe validar stock suficiente antes de crear o actualizar un detalle.
 
-RF-51. El sistema debe descontar stock del producto cuando se crea un detalle.
+RF-53. El sistema debe descontar stock del producto cuando se crea un detalle.
 
-RF-52. El sistema debe reajustar stock correctamente cuando se actualiza la cantidad o el producto de un detalle.
+RF-54. El sistema debe reajustar stock correctamente cuando se actualiza la cantidad o el producto de un detalle.
 
-RF-53. El sistema debe reponer stock cuando se elimina un detalle.
+RF-55. El sistema debe reponer stock cuando se elimina un detalle.
 
-RF-54. El sistema debe reponer el stock de todos los detalles cuando un pedido pendiente se cancela.
+RF-56. El sistema debe reponer el stock de todos los detalles cuando un pedido pendiente se cancela.
 
-RF-55. El sistema debe mostrar solamente productos activos disponibles y aun no registrados en el pedido al momento de crear un nuevo detalle.
+RF-57. El sistema debe mostrar solamente productos activos disponibles y aun no registrados en el pedido al momento de crear un nuevo detalle.
 
 ### 10. Recibo y reporte del pedido
 
-RF-56. El sistema debe permitir descargar un recibo PDF del pedido a partir de la informacion actual registrada.
+RF-58. El sistema debe permitir descargar un recibo PDF del pedido a partir de la informacion actual registrada.
 
-RF-57. El sistema debe impedir la generacion del recibo cuando falten datos esenciales del pedido o cuando no existan detalles registrados.
+RF-59. El sistema debe obtener el recibo a partir de la cabecera vigente del pedido y de la totalidad de sus detalles registrados.
 
-RF-58. El sistema debe informar de forma clara que informacion falta cuando no sea posible generar el recibo.
+RF-60. El sistema debe impedir la generacion del recibo cuando falten datos esenciales del pedido o cuando no existan detalles registrados.
+
+RF-61. El sistema debe informar de forma clara, mediante mensaje emergente, que informacion falta cuando no sea posible generar el recibo.
 
 ## Requerimientos no funcionales
 

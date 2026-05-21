@@ -13,9 +13,6 @@ export class CrearPedidoDto {
   @IsUUID()
   id_cliente: string;
 
-  @IsUUID()
-  id_empleado: string;
-
   @IsDateString()
   fecha_orden_pedido: string;
 

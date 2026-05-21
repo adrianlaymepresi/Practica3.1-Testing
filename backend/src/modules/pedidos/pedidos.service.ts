@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MENSAJES } from '../../common/constants/mensajes.constant';
+import { UsuarioJwt } from '../../common/interfaces/usuario-jwt.interface';
 import { ReferenciasRepository } from '../../common/database/referencias.repository';
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
 import { ApiException } from '../../common/exceptions/api.exception';
@@ -41,25 +42,40 @@ export class PedidosService {
     return this.pedidosRepository.obtenerPedidoConRelacionesPorId(idPedido);
   }
 
+  async obtenerDatosRecibo(idPedido: string) {
+    const [pedido, detalles] = await Promise.all([
+      this.pedidosRepository.obtenerPedidoConRelacionesPorId(idPedido),
+      this.detallePedidosRepository.listarTodosPorPedido(idPedido),
+    ]);
+
+    return {
+      datos: {
+        pedido,
+        detalles,
+      },
+    };
+  }
+
   async obtenerSiguienteCodigo() {
     return {
       codigo_orden_pedido: await this.generarCodigoPedido(),
     };
   }
 
-  async crear(crearPedidoDto: CrearPedidoDto) {
+  async crear(crearPedidoDto: CrearPedidoDto, usuario: UsuarioJwt) {
     const descuentoPedido = this.redondearMonto(
       crearPedidoDto.descuento_orden_pedido ?? 0,
     );
     const codigoPedido = await this.generarCodigoPedido();
+    const idEmpleado = await this.obtenerIdEmpleadoUsuario(usuario);
 
     await this.validarClienteActivo(crearPedidoDto.id_cliente);
-    await this.validarEmpleadoActivo(crearPedidoDto.id_empleado);
+    await this.validarEmpleadoActivo(idEmpleado);
     this.validarDescuentoPedido(descuentoPedido, 0);
 
     const pedido = await this.pedidosRepository.crear({
       id_cliente: crearPedidoDto.id_cliente,
-      id_empleado: crearPedidoDto.id_empleado,
+      id_empleado: idEmpleado,
       codigo_orden_pedido: codigoPedido,
       fecha_orden_pedido: this.normalizarFechaPedido(
         crearPedidoDto.fecha_orden_pedido,
@@ -82,9 +98,14 @@ export class PedidosService {
     };
   }
 
-  async actualizar(idPedido: string, actualizarPedidoDto: ActualizarPedidoDto) {
+  async actualizar(
+    idPedido: string,
+    actualizarPedidoDto: ActualizarPedidoDto,
+    usuario: UsuarioJwt,
+  ) {
     const pedidoActual = await this.pedidosRepository.obtenerPorId(idPedido);
     this.validarPedidoEditable(pedidoActual);
+    const idEmpleado = await this.obtenerIdEmpleadoUsuario(usuario);
 
     const subtotalActual = this.redondearMonto(
       Number(pedidoActual.subtotal_orden_pedido),
@@ -98,9 +119,7 @@ export class PedidosService {
       await this.validarClienteActivo(actualizarPedidoDto.id_cliente);
     }
 
-    if (actualizarPedidoDto.id_empleado) {
-      await this.validarEmpleadoActivo(actualizarPedidoDto.id_empleado);
-    }
+    await this.validarEmpleadoActivo(idEmpleado);
 
     this.validarDescuentoPedido(descuentoPedido, subtotalActual);
 
@@ -108,12 +127,11 @@ export class PedidosService {
       ...(actualizarPedidoDto.id_cliente && {
         id_cliente: actualizarPedidoDto.id_cliente,
       }),
-      ...(actualizarPedidoDto.id_empleado && {
-        id_empleado: actualizarPedidoDto.id_empleado,
-      }),
+      id_empleado: idEmpleado,
       ...(actualizarPedidoDto.fecha_orden_pedido && {
-        fecha_orden_pedido: this.normalizarFechaPedido(
+        fecha_orden_pedido: this.normalizarFechaPedidoActualizable(
           actualizarPedidoDto.fecha_orden_pedido,
+          pedidoActual.fecha_orden_pedido,
         ),
       }),
       ...(actualizarPedidoDto.observacion_orden_pedido !== undefined && {
@@ -344,6 +362,29 @@ export class PedidosService {
     return producto;
   }
 
+  private async obtenerIdEmpleadoUsuario(usuario: UsuarioJwt) {
+    if (usuario.id_empleado?.trim()) {
+      return usuario.id_empleado;
+    }
+
+    const empleado =
+      await this.pedidosCatalogosRepository.buscarEmpleadoActivoPorUsuarioId(
+        usuario.sub,
+      );
+
+    if (empleado?.id_empleado) {
+      return empleado.id_empleado;
+    }
+
+    throw ApiException.solicitudInvalida(
+      'No se pudo identificar al empleado autenticado',
+      crearErrorCampo(
+        'id_empleado',
+        'La sesion actual no tiene un empleado valido asociado',
+      ),
+    );
+  }
+
   private normalizarFechaPedido(fechaPedido: string) {
     const fechaNormalizada = new Date(fechaPedido);
 
@@ -371,6 +412,24 @@ export class PedidosService {
     }
 
     return fechaNormalizada.toISOString();
+  }
+
+  private normalizarFechaPedidoActualizable(
+    fechaPedido: string,
+    fechaPedidoActual: string,
+  ) {
+    const fechaNueva = new Date(fechaPedido);
+    const fechaActual = new Date(fechaPedidoActual);
+
+    if (
+      !Number.isNaN(fechaNueva.getTime()) &&
+      !Number.isNaN(fechaActual.getTime()) &&
+      fechaNueva.getTime() === fechaActual.getTime()
+    ) {
+      return fechaActual.toISOString();
+    }
+
+    return this.normalizarFechaPedido(fechaPedido);
   }
 
   private validarPedidoActivo(pedido: {

@@ -154,19 +154,21 @@ Su finalidad es dejar claro con que tecnologias, arquitectura, plataformas y con
 
 2. Todo pedido nuevo se crea con estado `PENDIENTE`.
 
-3. La fecha del pedido debe programarse con 24 horas exactas de anticipacion minima.
+3. El empleado del pedido no se selecciona manualmente en el formulario. Se obtiene desde la sesion autenticada del usuario que crea o actualiza el pedido.
 
-4. Los estados operativos permitidos son:
+4. La fecha del pedido debe programarse con 24 horas exactas de anticipacion minima y esa misma regla se aplica cuando se cambia la fecha de un pedido existente.
+
+5. Los estados operativos permitidos son:
 
 - `PENDIENTE`
 - `COMPLETADO`
 - `CANCELADO`
 
-5. Un pedido solo puede cancelarse antes de la fecha programada.
+6. Un pedido solo puede cancelarse antes de la fecha programada.
 
-6. Un pedido solo puede completarse despues de la fecha programada.
+7. Un pedido solo puede completarse despues de la fecha programada.
 
-7. Los detalles solo pueden gestionarse mientras el pedido siga pendiente y activo.
+8. Los detalles solo pueden gestionarse mientras el pedido siga pendiente y activo.
 
 ### 3.7 Detalle de pedido y stock
 
@@ -195,9 +197,11 @@ Su finalidad es dejar claro con que tecnologias, arquitectura, plataformas y con
 
 1. El recibo PDF se genera desde el frontend usando la informacion actual del pedido y sus detalles.
 
-2. Antes de generar el recibo se valida que existan cliente, empleado, codigo, total valido y al menos un detalle.
+2. El frontend obtiene los datos del recibo desde un endpoint especifico del backend para evitar depender de paginacion de detalles.
 
-3. Si faltan datos, el sistema muestra un modal claro con los campos a revisar.
+3. Antes de generar el recibo se valida que existan cliente, empleado, codigo, total valido y al menos un detalle.
+
+4. Si faltan datos o ocurre una validacion funcional, el sistema muestra un modal claro con los campos a revisar.
 
 ## 4. Frontend web administrativo
 

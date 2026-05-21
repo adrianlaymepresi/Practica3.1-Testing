@@ -15,10 +15,6 @@ export class ActualizarPedidoDto {
   id_cliente?: string;
 
   @IsOptional()
-  @IsUUID()
-  id_empleado?: string;
-
-  @IsOptional()
   @IsDateString()
   fecha_orden_pedido?: string;
 

@@ -36,6 +36,7 @@ const ETIQUETAS_CAMPOS: Record<string, string> = {
   subtotal_orden_pedido: 'Subtotal del pedido',
   descuento_orden_pedido: 'Descuento del pedido',
   total_orden_pedido: 'Total del pedido',
+  recibo: 'Recibo',
   id_detalle_orden: 'Detalle del pedido',
   cantidad_detalle_orden: 'Cantidad',
   precio_unitario_detalle_orden: 'Precio unitario',

@@ -30,6 +30,7 @@ export interface UsuarioAutenticacion {
 
 export interface SesionActiva {
   id_usuario: string;
+  id_empleado: string;
   nombre_usuario: string;
   nombre_completo: string;
   ci_empleado: string;

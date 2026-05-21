@@ -133,8 +133,9 @@ PARA preparar la venta y luego gestionar sus productos
 
 CRITERIOS DE ACEPTACION
 - GIVEN un cliente activo y un empleado activo WHEN se crea un pedido THEN el sistema genera automaticamente el codigo `PEDIDO-N` y lo deja en estado `PENDIENTE`
+- GIVEN un usuario autenticado WHEN crea o actualiza un pedido THEN el sistema asigna automaticamente como empleado del pedido al empleado asociado a esa sesion
 - GIVEN una fecha programada WHEN se guarda el pedido THEN el sistema exige una anticipacion minima exacta de 24 horas
-- GIVEN un pedido pendiente WHEN se actualiza su cabecera THEN el sistema permite modificar solo los datos habilitados y respeta la validacion de fecha si esta cambia
+- GIVEN un pedido pendiente WHEN se actualiza su cabecera THEN el sistema permite modificar solo los datos habilitados, mantiene el empleado no editable y respeta la validacion de fecha si esta cambia
 
 ## HU-08. Gestion de detalle del pedido y control de stock
 
@@ -184,5 +185,5 @@ PARA contar con una salida documental de la venta registrada
 
 CRITERIOS DE ACEPTACION
 - GIVEN un pedido valido con detalles WHEN el usuario solicita el recibo THEN el sistema genera y descarga el PDF con la informacion actual del pedido
-- GIVEN un pedido incompleto WHEN el usuario intenta generar el recibo THEN el sistema informa claramente que datos faltan
+- GIVEN un pedido incompleto WHEN el usuario intenta generar el recibo THEN el sistema informa claramente en un mensaje emergente que datos faltan
 - GIVEN un pedido con detalles registrados WHEN se descarga el PDF THEN el documento muestra cliente, empleado, fecha, estado, lineas de detalle y resumen monetario

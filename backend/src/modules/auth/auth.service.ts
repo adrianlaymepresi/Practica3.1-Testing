@@ -135,6 +135,7 @@ export class AuthService {
 
     return {
       id_usuario: usuario.id_usuario,
+      id_empleado: usuario.empleado?.id_empleado ?? '',
       nombre_usuario: usuario.nombre_usuario,
       nombre_completo: nombreCompleto,
       ci_empleado: usuario.empleado?.ci_empleado ?? '',
@@ -160,6 +161,7 @@ export class AuthService {
     return crearJwtHs256<UsuarioJwt>(
       {
         sub: sesionActiva.id_usuario,
+        id_empleado: sesionActiva.id_empleado,
         nombre_usuario: sesionActiva.nombre_usuario,
         rol: sesionActiva.rol,
         nombre_completo: sesionActiva.nombre_completo,

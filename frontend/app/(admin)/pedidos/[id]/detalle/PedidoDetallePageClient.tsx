@@ -19,7 +19,7 @@ import { TablaDetallesPedido } from '@/src/components/tablas/TablaDetallesPedido
 import { useErroresFormulario } from '@/src/hooks/useErroresFormulario';
 import { formatearEstadoRegistro } from '@/src/lib/utils/detalle-registro';
 import { formatearFechaHoraZonaHoraria } from '@/src/lib/utils/fechas';
-import { obtenerMensajeError } from '@/src/lib/utils/errores';
+import { obtenerErroresCampo, obtenerMensajeError } from '@/src/lib/utils/errores';
 import { crearPaginacionVacia } from '@/src/lib/utils/paginacion';
 import {
   descargarReciboPedidoPdf,
@@ -38,6 +38,7 @@ import {
   eliminarDetallePedido,
   listarDetallesPedido,
   listarProductosDisponiblesPedido,
+  obtenerDatosReciboPedido,
   obtenerPedido,
 } from '@/src/services/pedidos.service';
 import { ProductoOpcion } from '@/src/types/productos.types';
@@ -230,15 +231,13 @@ export function PedidoDetallePageClient() {
     }
 
     try {
-      const detallesReporte = await listarDetallesPedido(idPedido, {
-        pagina: 1,
-        limite: 500,
-        campoBusqueda: 'nombre_producto',
-      });
+      setError(null);
+      setAlertaRecibo(null);
+      const datosRecibo = await obtenerDatosReciboPedido(idPedido);
 
       const erroresRecibo = validarReciboPedido(
-        pedido,
-        detallesReporte.registros,
+        datosRecibo.pedido,
+        datosRecibo.detalles,
       );
 
       if (erroresRecibo.length > 0) {
@@ -250,14 +249,27 @@ export function PedidoDetallePageClient() {
         return;
       }
 
-      descargarReciboPedidoPdf(pedido, detallesReporte.registros);
+      descargarReciboPedidoPdf(datosRecibo.pedido, datosRecibo.detalles);
     } catch (errorDesconocido) {
-      setError(
-        obtenerMensajeError(
+      const erroresRecibo = obtenerErroresCampo(errorDesconocido);
+
+      setAlertaRecibo({
+        mensaje: obtenerMensajeError(
           errorDesconocido,
           'No se pudo generar el recibo del pedido',
         ),
-      );
+        errores:
+          erroresRecibo.length > 0
+            ? erroresRecibo
+            : [
+                {
+                  campo: 'recibo',
+                  mensajes: [
+                    'Verifica que el pedido tenga cliente, empleado, fecha valida, total mayor a cero y al menos un detalle registrado',
+                  ],
+                },
+              ],
+      });
     }
   }
 

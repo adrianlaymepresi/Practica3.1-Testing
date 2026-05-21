@@ -10,7 +10,9 @@ import {
 } from '@nestjs/common';
 import { ROLES_SISTEMA } from '../../common/constants/roles.constant';
 import { RolesPermitidos } from '../../common/decorators/roles.decorator';
+import { UsuarioActual } from '../../common/decorators/usuario-actual.decorator';
 import { PaginacionQueryDto } from '../../common/dto/paginacion-query.dto';
+import type { UsuarioJwt } from '../../common/interfaces/usuario-jwt.interface';
 import { ActualizarDetallePedidoDto } from './dto/actualizar-detalle-pedido.dto';
 import { ActualizarPedidoDto } from './dto/actualizar-pedido.dto';
 import { CambiarEstadoPedidoDto } from './dto/cambiar-estado-pedido.dto';
@@ -56,14 +58,22 @@ export class PedidosController {
     );
   }
 
+  @Get(':id/recibo')
+  obtenerDatosRecibo(@Param('id') idPedido: string) {
+    return this.pedidosService.obtenerDatosRecibo(idPedido);
+  }
+
   @Get(':id')
   obtenerPorId(@Param('id') idPedido: string) {
     return this.pedidosService.obtenerPorId(idPedido);
   }
 
   @Post()
-  crear(@Body() crearPedidoDto: CrearPedidoDto) {
-    return this.pedidosService.crear(crearPedidoDto);
+  crear(
+    @Body() crearPedidoDto: CrearPedidoDto,
+    @UsuarioActual() usuario: UsuarioJwt,
+  ) {
+    return this.pedidosService.crear(crearPedidoDto, usuario);
   }
 
   @Post(':id/detalles')
@@ -78,8 +88,9 @@ export class PedidosController {
   actualizar(
     @Param('id') idPedido: string,
     @Body() actualizarPedidoDto: ActualizarPedidoDto,
+    @UsuarioActual() usuario: UsuarioJwt,
   ) {
-    return this.pedidosService.actualizar(idPedido, actualizarPedidoDto);
+    return this.pedidosService.actualizar(idPedido, actualizarPedidoDto, usuario);
   }
 
   @Patch(':id/estado')

@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Pencil, Plus, X } from 'lucide-react';
 import { Boton } from '@/src/components/comunes/Boton';
 import { InputTexto } from '@/src/components/comunes/InputTexto';
+import { ApiError } from '@/src/types/api.types';
+import { SesionActiva } from '@/src/types/auth.types';
 import {
   cumpleAnticipacionMinimaPedido,
   convertirFechaHoraInputLocalAUTC,
@@ -15,10 +17,8 @@ import {
   ESTADO_PEDIDO_DEFECTO,
   normalizarObservacionPedido,
   obtenerNombreClientePedido,
-  obtenerNombreEmpleadoPedido,
 } from '@/src/lib/utils/pedidos';
 import { ClienteOpcion } from '@/src/types/clientes.types';
-import { EmpleadoOpcion } from '@/src/types/empleados.types';
 import {
   ActualizarPedidoPayload,
   CrearPedidoPayload,
@@ -26,10 +26,10 @@ import {
 } from '@/src/types/pedidos.types';
 
 interface FormularioPedidoProps {
+  sesion: SesionActiva;
   pedidoEdicion?: Pedido | null;
   codigoPedido: string;
   clientes: ClienteOpcion[];
-  empleados: EmpleadoOpcion[];
   alCrear: (datos: CrearPedidoPayload) => Promise<void>;
   alActualizar: (
     idPedido: string,
@@ -41,7 +41,6 @@ interface FormularioPedidoProps {
 function obtenerInicial(pedido?: Pedido | null, codigoPedido = '') {
   return {
     id_cliente: pedido?.id_cliente ?? '',
-    id_empleado: pedido?.id_empleado ?? '',
     codigo_orden_pedido: pedido?.codigo_orden_pedido ?? codigoPedido,
     fecha_orden_pedido: pedido?.fecha_orden_pedido
       ? formatearFechaHoraInputLocal(pedido.fecha_orden_pedido)
@@ -56,10 +55,10 @@ function obtenerInicial(pedido?: Pedido | null, codigoPedido = '') {
 }
 
 export function FormularioPedido({
+  sesion,
   pedidoEdicion,
   codigoPedido,
   clientes,
-  empleados,
   alCrear,
   alActualizar,
   alCancelarEdicion,
@@ -94,15 +93,23 @@ export function FormularioPedido({
         fechaCambio &&
         !cumpleAnticipacionMinimaPedido(formulario.fecha_orden_pedido)
       ) {
-        throw new Error(
+        throw new ApiError(
           'La fecha del pedido debe programarse con al menos 24 horas exactas de anticipacion.',
+          400,
+          [
+            {
+              campo: 'fecha_orden_pedido',
+              mensajes: [
+                'Debes elegir una fecha y hora que esten al menos 24 horas exactas adelante en horario de Bolivia',
+              ],
+            },
+          ],
         );
       }
 
       if (pedidoEdicion) {
         const datosActualizacion: ActualizarPedidoPayload = {
           id_cliente: formulario.id_cliente,
-          id_empleado: formulario.id_empleado,
           ...(fechaCambio && {
             fecha_orden_pedido: convertirFechaHoraInputLocalAUTC(
               formulario.fecha_orden_pedido,
@@ -118,7 +125,6 @@ export function FormularioPedido({
       } else {
         const datosCreacion: CrearPedidoPayload = {
           id_cliente: formulario.id_cliente,
-          id_empleado: formulario.id_empleado,
           fecha_orden_pedido: convertirFechaHoraInputLocalAUTC(
             formulario.fecha_orden_pedido,
           ),
@@ -164,33 +170,15 @@ export function FormularioPedido({
           Obligatorio. Solo se muestran clientes activos.
         </span>
       </label>
-      <label className="campo">
-        <span className="campo__etiqueta">
-          Empleado
-          <small>Obligatorio</small>
-        </span>
-        <select
-          className="campo__control"
-          value={formulario.id_empleado}
-          required
-          onChange={(evento) =>
-            setFormulario((actual) => ({
-              ...actual,
-              id_empleado: evento.target.value,
-            }))
-          }
-        >
-          <option value="">Selecciona un empleado</option>
-          {empleados.map((empleado) => (
-            <option key={empleado.id_empleado} value={empleado.id_empleado}>
-              {obtenerNombreEmpleadoPedido(empleado)}
-            </option>
-          ))}
-        </select>
-        <span className="campo__ayuda">
-          Obligatorio. Solo se muestran empleados activos.
-        </span>
-      </label>
+      <InputTexto
+        etiqueta="Empleado"
+        ayuda="Asignado automaticamente segun el usuario autenticado que esta registrando o actualizando el pedido."
+        name="empleado_autenticado"
+        value={`${sesion.ci_empleado} - ${sesion.nombre_completo}`}
+        required
+        readOnly
+        disabled
+      />
       <InputTexto
         etiqueta="Codigo del pedido"
         ayuda="Generado automaticamente por el sistema con el formato PEDIDO-NUMERO."
